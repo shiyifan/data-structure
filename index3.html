@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h2>For Data Structure</h2>
+    <ul>
+      <li>汉诺塔</li>
+      <li>循环队列（顺序表示）</li>
+      <li>银行客户业务离散模拟</li>
+    </ul>
+
+    <script>
+      /* 汉诺塔 */
+      let count = 0;
+
+      hanoi(3, 'x', 'y', 'z');
+
+      function hanoi(n, x, y, z) {
+        if (n === 1) {
+          move(1, x, z);
+        } else {
+          hanoi(n - 1, x, z, y);
+          move(n, x, z);
+          hanoi(n - 1, y, x, z);
+        }
+      }
+      function move(n, from, to) {
+        console.log(`${++count}, '${n}' ${from} -> ${to}`);
+      }
+    </script>
+
+    <script>
+      /* 循环队列（顺序表示） */
+      function CircleQueue(maxSize) {
+        this.q = new Array(maxSize);
+        this.maxSize = maxSize;
+        this.front = 0;
+        this.rear = 0;
+      }
+      Object.defineProperty(CircleQueue.prototype, 'length', {
+        get() {
+          /* 利用求余操作根据索引计算队列长度 */
+          return (this.rear - this.front + this.maxSize) % this.maxSize;
+        },
+      });
+      CircleQueue.prototype.enqueue = function (element) {
+        if ((this.rear + 1) % this.maxSize === this.front) {
+          throw new Error('queue is full');
+        }
+        this.q[this.rear] = element;
+        this.rear = (this.rear + 1) % this.maxSize;
+      };
+      CircleQueue.prototype.dequeue = function () {
+        if (this.rear === this.front) {
+          throw new Error('queue is empty');
+        }
+        const element = this.q[this.front];
+        this.front = (this.front + 1) % this.maxSize;
+        return element;
+      };
+      CircleQueue.prototype.toString = function () {
+        if (this.rear === this.front) {
+          return `(${this.front}, ${this.rear}) (empty)`;
+        }
+
+        let s = '';
+        for (let n = this.front; ; n++) {
+          const index = n % this.maxSize;
+
+          if (index === this.rear) {
+            break;
+          }
+
+          s += this.q[index] + ' ';
+        }
+
+        return `(${this.front}, ${this.rear}) ${s}`;
+      };
+
+      const q = new CircleQueue(5);
+      console.log(q.toString());
+      q.enqueue(1);
+      q.enqueue(2);
+      q.enqueue(3);
+      q.enqueue(4);
+      console.log(q.toString());
+      q.dequeue();
+      q.dequeue();
+      console.log(q.toString());
+      q.enqueue(1);
+      q.enqueue(2);
+      console.log(q.toString(), q.length);
+      q.dequeue();
+      q.dequeue();
+      q.dequeue();
+      console.log(q.toString());
+      q.dequeue();
+      console.log(q.toString());
+    </script>
+
+    <script>
+      /* 银行客户业务处理离散模拟（准备） */
+
+      /* 事件, 客户到达事件、各个客户队列的客户离开事件 */
+      function BankEvent(type, occurTime) {
+        this.occurTime = occurTime; // 事件发生时刻
+        this.type = type; // 事件类型： 0:到达事件，1, 2, 3, 4分别表示相应队列的客户离开事件
+      }
+      BankEvent.prototype.toString = function () {
+        return `(t: ${this.type}, o: ${this.occurTime})`;
+      };
+
+      /* 事件的有序链表，所有事件按照"occurTime"升序排列 */
+      function BankEventLL() {
+        this.head = { next: null };
+      }
+      /* 事件链表的有序插入 */
+      BankEventLL.prototype.insert = function (event) {
+        let last = this.head;
+        let current = this.head.next;
+        for (;;) {
+          if (!current) {
+            last.next = { event, next: null };
+            break;
+          }
+          if (current.event.occurTime <= event.occurTime) {
+            last = current;
+            current = current.next;
+            continue;
+          }
+          last.next = { event, next: current };
+          break;
+        }
+      };
+      /* 删除事件链表的第一个节点并返回该节点 */
+      BankEventLL.prototype.next = function () {
+        if (!this.head.next) {
+          return null;
+        }
+        const first = this.head.next;
+        this.head.next = first.next;
+        return first.event;
+      };
+      BankEventLL.prototype.toString = function () {
+        if (!this.head.next) return '(empty)';
+
+        let s = '';
+        let p = this.head.next;
+        while (p) {
+          s += p.event.toString() + ' ';
+          p = p.next;
+        }
+        return s;
+      };
+
+      /* 客户 */
+      function Customer(arriveTime, duration) {
+        this.arriveTime = arriveTime;
+        this.duration = duration; // 客户业务处理时长
+      }
+      Customer.prototype.toString = function () {
+        return `(a: ${this.arriveTime}, d: ${this.duration})`;
+      };
+
+      function CustomerQ() {
+        this.front = null;
+        this.rear = null;
+        this.head = { next: null };
+        this.length = 0;
+      }
+      CustomerQ.prototype.toString = function () {
+        let p = this.head.next;
+        if (!p) return '(empty)';
+
+        let s = '';
+        while (p) {
+          s += p.customer.toString() + ' ';
+          p = p.next;
+        }
+
+        return s;
+      };
+      CustomerQ.prototype.enqueue = function (customer) {
+        this.length++;
+        if (!this.head.next) {
+          this.head.next = this.front = this.rear = { customer, next: null };
+          return;
+        }
+        this.rear.next = { customer, next: null };
+        this.rear = this.rear.next;
+      };
+      CustomerQ.prototype.dequeue = function () {
+        if (!this.head.next) {
+          throw new Error('queue is empty');
+        }
+        this.length--;
+
+        const first = this.front;
+        this.head.next = this.front.next;
+
+        if (this.front === this.rear) {
+          this.front = this.rear = null;
+        } else {
+          this.front = this.front.next;
+        }
+
+        return first.customer;
+      };
+      CustomerQ.prototype.first = function () {
+        if (!this.head.next) {
+          throw new Error('queue is empty');
+        }
+        return this.front.customer;
+      };
+      CustomerQ.prototype.isEmpty = function () {
+        return !this.head.next;
+      };
+
+      /* 获取一个随机数，而且 min < 随机数 < max */
+      function getRandomInt(min, max) {
+        const minCeiled = Math.ceil(min);
+        const maxFloored = Math.floor(max);
+
+        return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
+      }
+    </script>
+
+    <script>
+      /* 银行客户业务处理离散模拟 */
+
+      function Bank(closeTime) {
+        this.customerNumber = 0;
+        this.totalTime = 0;
+
+        this.customerQs = [new CustomerQ(), new CustomerQ()]; // 实例化两个队列。可以实例化任意多队列
+        this.events = new BankEventLL();
+        this.closeTime = closeTime;
+      }
+      Bank.prototype.random = function () {
+        /* 返回(5, 20)区间内的随机数 */
+        return getRandomInt(5, 20);
+      };
+      Object.defineProperty(Bank.prototype, 'shortestQ', {
+        get() {
+          let len = this.customerQs[0].length;
+          let shortest = 0;
+          for (let i = 1; i < this.customerQs.length; i++) {
+            if (len > this.customerQs[i].length) {
+              len = this.customerQs[i].length;
+              shortest = i;
+            }
+          }
+          return shortest;
+        },
+      });
+      Bank.prototype.customerArrived = function (e) {
+        this.customerNumber++;
+
+        const nextInterval = this.random();
+        const duration = this.random();
+        console.log('customer arrived: ', e.toString(), 'nextInterval: ', nextInterval, 'duration: ', duration);
+
+        if (e.occurTime + nextInterval < this.closeTime) {
+          /* 在接收到客户到达事件时，在随机的时间间隔后产生下一个客户到达事件，如果下一个客户到达事件超过了下
+          班时间则不插入队列中 */
+          this.events.insert(new BankEvent(0, e.occurTime + nextInterval));
+        }
+
+        const shortest = this.shortestQ;
+        const shortestEmpty = this.customerQs[shortest].isEmpty();
+        this.customerQs[shortest].enqueue(new Customer(e.occurTime, duration));
+        if (shortestEmpty) {
+          /* 如果该用户是队列的第一名，那么进队后就开始办理业务，此时需要再往事件列表中插入离开事件 */
+          /* 注意，插入客户离开事件时，由于"type == 0"是到达事件且shortest为队列在数组中的索引，所以此处的事件类型为
+          "shortest + 1" */
+          this.events.insert(new BankEvent(shortest + 1, e.occurTime + duration));
+        }
+      };
+      Bank.prototype.customerLeft = function (e) {
+        console.log('customer left: ', e.toString());
+        const qLeft = this.customerQs[e.type - 1]; // 通过客户离开事件类型获取触发事件的队列时，队列的索引是事件类型-1
+        const left = qLeft.dequeue();
+        this.totalTime += e.occurTime - left.arriveTime;
+
+        if (qLeft.isEmpty()) {
+          return;
+        }
+        /* 获取触发事件的队列的队首客户，然后插入该客户的离开事件 */
+        const next = qLeft.first();
+        this.events.insert(new BankEvent(e.type, e.occurTime + next.duration));
+      };
+      Bank.prototype.operate = function () {
+        console.log(`bank start to operate! close at ${this.closeTime}`);
+        this.events.insert(new BankEvent(0, 0));
+
+        console.log('events: ', bank.events.toString(), 'customerQs: ', bank.customerQsToString());
+        let e;
+        while ((e = this.events.next())) {
+          if (e.type === 0) {
+            this.customerArrived(e);
+          } else {
+            this.customerLeft(e);
+          }
+          console.log('events: ', bank.events.toString(), 'customerQs: ', bank.customerQsToString());
+        }
+
+        const average = this.totalTime / this.customerNumber;
+        console.log(`bank closed, totalTime: ${this.totalTime}, customerNumber: ${this.customerNumber}, average: ${average}`);
+      };
+      Bank.prototype.customerQsToString = function () {
+        let s = '';
+        for (let q of this.customerQs) {
+          s += q.toString() + '; ';
+        }
+        return s;
+      };
+
+      console.log('银行业务模拟');
+      const bank = new Bank(20);
+      bank.operate();
+    </script>
+  </body>
+</html>

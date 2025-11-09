@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h2>For Data Structure</h2>
+    <ul>
+      <li>表达式求解</li>
+    </ul>
+
+    <script>
+      function Stack() {
+        this.base = 0;
+        this.top = 0;
+        this.container = [];
+      }
+      function sPush(stack, element) {
+        stack.container[stack.top++] = element;
+      }
+      function sPop(stack) {
+        if (stack.top === stack.base) {
+          throw new Error('stack is empty!');
+        }
+        return stack.container[--stack.top];
+      }
+      function sIsEmpty(stack) {
+        return stack.base === stack.top;
+      }
+      function sTop(stack) {
+        if (stack.top === stack.base) {
+          throw new Error('stack is empty!');
+        }
+        return stack.container[stack.top - 1];
+      }
+      function sSize(stack) {
+        return stack.top - stack.base;
+      }
+      function sToString(stack) {
+        if (stack.base === stack.top) {
+          return '(empty stack)';
+        }
+        let output = '(bottom)';
+        for (let i = stack.base; i < stack.top - 1; i++) {
+          output += stack.container[i] + ', ';
+        }
+        output += stack.container[stack.top - 1] + '(top)';
+
+        return output;
+      }
+      function sPopAll(stack, result) {
+        try {
+          result += sPop(stack);
+          return sPopAll(stack, result);
+        } catch (_) {
+          return result;
+        }
+      }
+    </script>
+
+    <script>
+      /* 8进制转换 */
+      function toOct(decimal, result) {
+        const quot = Math.floor(decimal / 8);
+        const mod = decimal % 8;
+        sPush(result, mod);
+
+        if (quot !== 0) {
+          toOct(quot, result);
+        }
+      }
+
+      const s = new Stack();
+      toOct(1348, s);
+      console.log('oct: ', sPopAll(s, ''));
+    </script>
+
+    <script>
+      /* 表达式求值 */
+
+      /* 表达式求值时的运算优先级，同一级别的运算符（如'+'与'-'）先从左侧运算 */
+      /* 1: 左侧优先级高
+      -1: 右侧优先级高
+      0: 括号匹配，此时括号内的运算已经完成 */
+
+      const optrPrio = {
+        '+': {
+          '+': 1,
+          '-': 1,
+          '*': -1,
+          '/': -1,
+          '(': -1,
+          ')': 1,
+          '#': 1,
+        },
+        '-': {
+          '+': 1,
+          '-': 1,
+          '*': -1,
+          '/': -1,
+          '(': -1,
+          ')': 1,
+          '#': 1,
+        },
+        '*': {
+          '+': 1,
+          '-': 1,
+          '*': 1,
+          '/': 1,
+          '(': -1,
+          ')': 1,
+          '#': 1,
+        },
+        '/': {
+          '+': 1,
+          '-': 1,
+          '*': 1,
+          '/': 1,
+          '(': -1,
+          ')': 1,
+          '#': 1,
+        },
+        '(': {
+          '+': -1,
+          '-': -1,
+          '*': -1,
+          '/': -1,
+          '(': -1,
+          ')': 0,
+        },
+        ')': {
+          // 可能出现这个情况吗？ 也就是说')'运算符能被压栈吗？
+          '+': 1,
+          '-': 1,
+          '*': 1,
+          '/': 1,
+          ')': 1,
+          '#': 1,
+        },
+        '#': {
+          '+': -1,
+          '-': -1,
+          '*': -1,
+          '/': -1,
+          '(': -1,
+          '#': 0,
+        },
+      };
+
+      const express = '(1+2)*2-9#';
+      console.log(express, expEval(express));
+
+      function expEval(express) {
+        const operator = new Stack(); // 运算符
+        const operand = new Stack(); // 操作数
+        sPush(operator, '#');
+
+        for (let i = 0; i < express.length; ) {
+          const c = express[i];
+          if (isOperator(c)) {
+            const topOp = sTop(operator);
+
+            switch (optrPrio[topOp][c]) {
+              case 1:
+                /* 上一个运算符优先级高于当前运算符 */
+                /* 该算法中，仅在上一个运算符优先级高于当前运算符时才会发生计算 */
+                const oprd1 = sPop(operand); // 先弹出栈的为第二操作数
+                const oprd0 = sPop(operand);
+                sPop(operator);
+                sPush(operand, evalu(oprd0, oprd1, topOp));
+                /* 此时无需读取下一个字符，因为不知道当前字符与栈顶的新运算符的优先级关系 */
+                break;
+              case -1:
+                /* 上一个运算符优先级低于当前运算符 */
+                sPush(operator, c);
+
+                if (c === ')') console.log(') is pushed');
+
+                i++;
+                break;
+              case 0:
+                /* 括号匹配或者'#'匹配 */
+                /* 此时括号内的计算已经完成，'('括号可以弹栈 */
+                sPop(operator);
+                i++;
+                break;
+              default:
+                throw new Error('express syntax error');
+            }
+          } else {
+            sPush(operand, parseInt(c));
+            i++;
+          }
+        }
+
+        console.log('operand: ', sToString(operand));
+        console.log('operator: ', sToString(operator));
+
+        return sPop(operand);
+      }
+
+      function isOperator(c) {
+        switch (c) {
+          case '+':
+          case '-':
+          case '*':
+          case '/':
+          case '(':
+          case ')':
+          case '#':
+            return true;
+          default:
+            return false;
+        }
+      }
+
+      function evalu(oprd0, oprd1, optr) {
+        switch (optr) {
+          case '+':
+            return oprd0 + oprd1;
+          case '-':
+            return oprd0 - oprd1;
+          case '*':
+            return oprd0 * oprd1;
+          case '/':
+            return oprd0 / oprd1;
+        }
+      }
+    </script>
+  </body>
+</html>

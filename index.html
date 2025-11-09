@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>For Data Structure，数据结构</h1>
+    <script>
+      function printLL(head) {
+        let s = '';
+        while (head) {
+          s += (head.value ?? '') + ' ';
+          head = head.next;
+        }
+        console.log(s);
+      }
+    </script>
+
+    <script>
+      function insertLL(head, pos, node) {
+        let i = 0;
+        let cur = head;
+
+        if (pos === 1) {
+          node.next = head.next;
+          head.next = node;
+          return;
+        }
+
+        cur = head.next;
+        while (cur && i < pos - 2) {
+          cur = cur.next;
+          i++;
+        }
+
+        if (!cur) {
+          throw new Error('cannot find the pos: ', pos);
+        }
+
+        node.next = cur.next;
+        cur.next = node;
+      }
+    </script>
+
+    <script>
+      function mergeLL(listHead0, listHead1) {
+        const mergedHead = { next: null };
+
+        const cur0 = listHead0.next;
+        const cur1 = listHead1.next;
+        const cur3 = mergedHead;
+
+        while (cur0 && cur1) {
+          if (cur0.value < cur1.value) {
+            cur3.next = Object.apply({}, cur0);
+            cur0 = cur0.next;
+          } else {
+            cur3.next = Object.apply({}, cur1);
+            cur1 = cur1.next;
+          }
+          cur3 = cur3.next;
+        }
+        if (!cur0) {
+          while (cur1) {
+            cur3.next = Object.apply({}, cur1);
+            cur1 = cur1.next;
+            cur3 = cur3.next;
+          }
+        }
+        if (!cur1) {
+          while (cur0) {
+            cur3.next = Object.apply({}, cur0);
+            cur0 = cur0.next;
+            cur3 = cur3.next;
+          }
+        }
+
+        return mergedHead;
+      }
+    </script>
+
+    <script>
+      const n2 = { value: 30, next: null };
+      const n1 = { value: 20, next: n2 };
+      const n0 = { value: 10, next: n1 };
+      const head0 = { next: n0 };
+
+      const m3 = { value: 35, next: null };
+      const m2 = { value: 25, next: m3 };
+      const m1 = { value: 7, next: m2 };
+      const m0 = { value: 5, next: m1 };
+      const head1 = { next: m0 };
+
+      printLL(head0);
+      printLL(head1);
+    </script>
+
+    <script>
+      /* static link list */
+      function initSLL(space) {
+        for (let i = 0; i < space.length - 1; i++) {
+          space[i] = { next: i + 1 };
+        }
+        space[space.length - 1] = { next: -1 };
+        return { next: 0 };
+      }
+
+      function mallocSLL(space, spareHead) {
+        const nodeIndex = spareHead.next;
+        if (nodeIndex === -1) {
+          throw new Error('no space left!');
+        }
+        spareHead.next = space[nodeIndex].next;
+        return nodeIndex;
+      }
+
+      function freeSLL(space, nodeIndex, spareHead) {
+        space[nodeIndex].next = spareHead.next;
+        delete space[nodeIndex].value;
+        spareHead.next = nodeIndex;
+      }
+
+      function toStringSLL(space, listHead) {
+        let cur = listHead.next;
+        let s = '';
+        while (cur !== -1) {
+          s += (space[cur].value ?? '?') + `(${space[cur].next})` + ' ';
+          cur = space[cur].next;
+        }
+        return s;
+      }
+    </script>
+
+    <script>
+      const space = new Array(10);
+      const spareHead = initSLL(space);
+
+      console.log('spare: ', toStringSLL(space, spareHead));
+
+      const head = mallocSLL(space, spareHead);
+      const first = mallocSLL(space, spareHead);
+      const second = mallocSLL(space, spareHead);
+      const third = mallocSLL(space, spareHead);
+
+      space[head].value = 'head';
+      space[head].next = first;
+      space[first].value = 'a';
+      space[first].next = second;
+      space[second].value = 'b';
+      space[second].next = third;
+      space[third].value = 'c';
+      space[third].next = -1;
+
+      console.log('head: ', toStringSLL(space, space[head]));
+      console.log('spare: ', toStringSLL(space, spareHead));
+
+      space[first].next = third;
+      freeSLL(space, second, spareHead);
+
+      console.log('head: ', toStringSLL(space, space[head]));
+      console.log('spare: ', toStringSLL(space, spareHead));
+
+      console.log('space: ', space);
+    </script>
+
+    <script>
+      /* 多项式相加的计算 */
+      console.log('多项式');
+
+      // 项
+      function Term(coef, expn) {
+        this.coef = coef; // 系数
+        this.expn = expn; // 指数
+      }
+
+      // 多项式有序链表的节点
+      function PNode(term, next) {
+        this.term = term;
+        next && (this.next = next); // next: PNode reference
+      }
+
+      function toStringP(head) {
+        let t = head.next;
+        let s = '';
+        while (t) {
+          const { coef, expn } = t.term;
+          s += `(${coef}, ${expn}) `;
+          t = t.next;
+        }
+        return s;
+      }
+
+      const pa1 = new PNode(new Term(7, 0));
+      const pa2 = new PNode(new Term(3, 1));
+      const pa3 = new PNode(new Term(9, 8));
+      const pa4 = new PNode(new Term(5, 17));
+      pa1.next = pa2;
+      pa2.next = pa3;
+      pa3.next = pa4;
+      pa4.next = null;
+      const paHead = new PNode(null, pa1);
+
+      const pb1 = new PNode(new Term(8, 1));
+      const pb2 = new PNode(new Term(22, 7));
+      const pb3 = new PNode(new Term(-9, 8));
+      pb1.next = pb2;
+      pb2.next = pb3;
+      pb3.next = null;
+      const pbHead = new PNode(null, pb1);
+
+      console.log('pa: ', toStringP(paHead), 'pb: ', toStringP(pbHead));
+      const result = addP(paHead, pbHead);
+      console.log('result: ', toStringP(result));
+
+      function addP(polA, polB) {
+        let pa = polA.next;
+        let pb = polB.next;
+
+        const resultHead = new PNode();
+        let pc = resultHead;
+
+        while (pa && pb) {
+          const { expn: paExpn, coef: paCoef } = pa.term;
+          const { expn: pbExpn, coef: pbCoef } = pb.term;
+
+          if (paExpn < pbExpn) {
+            pc.next = pa;
+            pa = pa.next;
+          } else if (paExpn > pbExpn) {
+            pc.next = pb;
+            pb = pb.next;
+          } else if (paExpn === pbExpn) {
+            const c = paCoef + pbCoef;
+            if (c === 0) {
+              pc.next = null; // 如果两个多项式最后的项抵消
+              pa = pa.next;
+              pb = pb.next;
+              continue;
+            }
+            pa.term.coef = c;
+            pc.next = pa;
+            pa = pa.next;
+            pb = pb.next;
+          }
+
+          pc = pc.next;
+        }
+
+        /* 将两个多项式剩余项添加至结果末尾 */
+        if (pa) {
+          pc.next = pa;
+        } else {
+          pc.next = pb;
+        }
+
+        return resultHead;
+      }
+    </script>
+  </body>
+</html>

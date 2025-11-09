@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h2>For Data Structure</h2>
+
+    <ul>
+      <li>回溯法与树的遍历</li>
+      <li>N皇后的问题</li>
+    </ul>
+
+    <script>
+      const listA = [1, 2, 3, 4];
+
+      const powerList = [];
+      powerSet(0, listA, [], powerList);
+      console.log('powerlist: ', powerList);
+
+      // 求解一个集合的幂集，即该集合所有子集构成的集合
+      function powerSet(i, list, temp, powerResult) {
+        if (i >= list.length) {
+          powerResult.push(temp);
+          return;
+        }
+
+        powerSet(i + 1, list, [list[i], ...temp], powerResult); // 取当前元素加入集合中
+        powerSet(i + 1, list, [...temp], powerResult); // 舍弃当前元素
+      }
+
+      console.log('fact: ', fact(10));
+
+      function fact(n) {
+        if (n === 0) return 1;
+        return n * fact(n - 1);
+      }
+    </script>
+
+    <script>
+      /* n皇后问题 */
+
+      /* 由于n个皇后不能相互攻击（不可同行同列同对角线），所以在"n x n"的棋盘中，每行一定仅有一个皇后.
+  所以n个皇后的棋盘保存在长度为n的线性表中，索引表示皇后所在行，数组元素表示皇后所在列 */
+
+      const notAttacks = []; // 不会互相攻击的棋盘
+      drop([], 0, 4, notAttacks); // 在第一行开始试探性放置棋子
+
+      console.log('queens: ', notAttacks.length);
+      notAttacks.forEach(c => console.log(c.toString()));
+
+      /* 在当前行放置棋子 */
+      /* queens: 当前的棋盘，row：当前行，n：全部皇后个数，notAttacks：不会相互攻击的棋盘 */
+      function drop(queens, row, n, notAttacks) {
+        if (row >= n) {
+          // 已放置全部皇后并不会相互攻击
+          notAttacks.push(queens);
+          return;
+        }
+
+        // 试探性地在下一行的每一列放置棋子并判断是否相互攻击
+        for (let i = 0; i < n; i++) {
+          const newChess = [...queens, i];
+
+          if (canAttack(newChess)) continue; // 相互攻击的棋盘不再继续试探地放置下一行棋子，而是试探当前行的下一个位置
+
+          // 如果当前行当前列不会相互攻击，那么直接试探下一行的棋子位置
+          drop(newChess, row + 1, n, notAttacks);
+        }
+      }
+
+      function canAttack(chessmans) {
+        if (chessmans.length === 0 || chessmans.length === 1) return false;
+
+        /* 每次用最后一个棋子与其他棋子比较。由于chessman的数组长度随着递归的深层调用而增长，
+  每次用最后一个棋子比较，累次比较之后可以保证chessman中所有棋子都不可相互攻击 */
+        const lastManRow = chessmans.length - 1;
+        const lastManCol = chessmans[lastManRow];
+
+        for (let i = 0; i < lastManRow; i++) {
+          // 判断是否在同一列
+          if (chessmans[i] === lastManCol) return true;
+
+          // 判断是否在同一对角线，即判断行索引之差与列索引之差是否相等
+          const x = Math.abs(lastManRow - i);
+          const y = Math.abs(lastManCol - chessmans[i]);
+          if (x === y) return true;
+        }
+
+        return false;
+      }
+    </script>
+  </body>
+</html>

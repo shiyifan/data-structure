@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>For Data Structure</h1>
+    <ul>
+      <li>霍夫曼编码</li>
+    </ul>
+
+    <script>
+      const weights = [7, 5, 2, 1];
+      /* 以线性表保存树中所有结点
+      如果霍夫曼树的结点个数为n，那么该树一共具有2n-1个结点 */
+      const hffmTree = new Array(2 * weights.length - 1);
+
+      for (let i = 0; i < weights.length; i++) {
+        /* 令线性表的前部都是叶子结点，而其余的为非叶子结点，这些非叶子结点需根据叶子结点创建 */
+        hffmTree[i] = new HffmNode(-1, -1, -1, weights[i]);
+      }
+
+      hffmTree[weights.length] = new HffmNode(2, 3, weights.length + 1, weights[2] + weights[3]);
+      hffmTree[2].parent = hffmTree[3].parent = weights.length;
+
+      hffmTree[weights.length + 1] = new HffmNode(1, weights.length, weights.length + 2, weights[1] + hffmTree[weights.length].weight);
+      hffmTree[1].parent = weights.length + 1;
+
+      hffmTree[weights.length + 2] = new HffmNode(0, weights.length + 1, -1, weights[0] + hffmTree[weights.length + 1].weight);
+      hffmTree[0].parent = weights.length + 2;
+
+      // 从叶子结点到根节点的路径获取编码
+      const codes = [];
+      for (let i = 0; i < weights.length; i++) {
+        let c = '';
+        let j = i;
+        for (let parent = hffmTree[i].parent; parent !== -1; ) {
+          // 规定左分支表示'0'，右分支表示'1'
+          if (hffmTree[parent].left === j) {
+            c = '0' + c;
+          } else {
+            c = '1' + c;
+          }
+          j = parent;
+          parent = hffmTree[parent].parent;
+        }
+        codes.push(c);
+      }
+      console.log('codes: ', codes);
+
+      // 从根结点到叶子结点的路径，遍历整棵霍夫曼树获取编码
+      const codes_fromRoot = new Array(weights.length);
+      hffmTree.forEach(n => (n.visited = 0)); // 在不设栈的情况下遍历霍夫曼树，新增"visited"属性表示行进中经过该结点的次数
+
+      let iNode = hffmTree.length - 1; // 假设数组最后一个结点为根节点
+
+      let cc = ''; // 用于临时累加路径上的编码
+      while (iNode !== -1) {
+        const currentNode = hffmTree[iNode];
+
+        if (currentNode.visited === 0) {
+          currentNode.visited = 1;
+
+          if (currentNode.left !== -1) {
+            // 继续向左行进并累加编码
+            iNode = currentNode.left;
+            cc += '0';
+            continue;
+          }
+
+          /* 由于霍夫曼树是严格的二叉树（不存在度为1的结点）所以如果"left === -1"那么一定有"right === -1" */
+          // left === -1, right === -1，已行进至叶子结点，需保存累加的临时编码字符串
+          codes_fromRoot[iNode] = cc;
+          continue;
+        }
+
+        if (currentNode.visited === 1) {
+          currentNode.visited = 2;
+
+          if (currentNode.right !== -1) {
+            iNode = currentNode.right;
+            cc += '1';
+            continue;
+          }
+
+          // left === -1, right === -1
+          iNode = currentNode.parent;
+          cc = cc.substring(0, cc.length - 1);
+          continue;
+        }
+
+        // visited === 2
+        break; // 如果行进到已经经过两次的结点，则表示huffman树已完成遍历
+      }
+
+      console.log('codes_fromRoot:', codes_fromRoot);
+
+      // 霍夫曼树的结点
+      // 霍夫曼树的所有结点保存在一维数组中，并用索引代替指针指向结点
+      function HffmNode(left, right, parent, weight) {
+        this.left = left; // 左结点在霍夫曼树数组中的索引
+        this.right = right; // 右结点在霍夫曼树数组中的索引
+        this.parent = parent; // 同上，父结点的索引
+        this.weight = weight;
+      }
+    </script>
+  </body>
+</html>

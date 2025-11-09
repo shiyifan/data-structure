@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>For Data Structure</h1>
+    <ul>
+      <li>矩阵的快速转置</li>
+      <li>矩阵乘法</li>
+    </ul>
+    <script>
+      // 矩阵的快速转置
+
+      // 三元组
+      function Triple(rowIndex, colIndex, value) {
+        this.rowIndex = rowIndex;
+        this.colIndex = colIndex;
+        this.value = value;
+      }
+      // 矩阵
+      function M(row, col) {
+        this.row = row;
+        this.col = col;
+        this.data = []; // 以顺序表的形式，以行序作为主序，保存矩阵的非零三元组
+      }
+      M.prototype.size = function () {
+        return this.data.length;
+      };
+      M.prototype.toString = function () {
+        const m = new Array(this.row);
+        for (let i = 0; i < m.length; i++) {
+          m[i] = new Array(this.col);
+        }
+
+        this.data.forEach(item => {
+          m[item.rowIndex][item.colIndex] = item.value;
+        });
+
+        let s = '';
+        for (let i = 0; i < m.length; i++) {
+          for (let j = 0; j < m[i].length; j++) {
+            s += m[i][j] || '0';
+            s += '\t';
+          }
+          s += '\n';
+        }
+        return s;
+      };
+
+      // 快速转置
+      M.prototype.transpose = function () {
+        // 每一列非零元的个数
+        const nonZeroCount = new Array(this.col);
+        nonZeroCount.fill(0);
+        for (let t of this.data) {
+          nonZeroCount[t.colIndex]++;
+        }
+
+        // 每一列第一个非零元在转置后的矩阵'data'中的索引
+        const nonZeroPos = new Array(this.col);
+        nonZeroPos.fill(0);
+        nonZeroPos[0] = 0; // 第一列的非零元在'data'中的索引一定是0
+        for (let i = 1; i < nonZeroPos.length; i++) {
+          nonZeroPos[i] = nonZeroPos[i - 1] + nonZeroCount[i - 1];
+        }
+
+        console.log('nonZeroCount:', nonZeroCount.toString());
+        console.log('nonZeroPos: ', nonZeroPos.toString());
+
+        // 转置
+        const transposedM = new M(this.col, this.row);
+        const tData = transposedM.data;
+        tData.length = this.data.length;
+        for (let t of this.data) {
+          const trp = new Triple(t.colIndex, t.rowIndex, t.value);
+          tData[nonZeroPos[t.colIndex]++] = trp;
+        }
+        return transposedM;
+      };
+
+      const m = new M(3, 4);
+      m.data.push(new Triple(0, 0, 1), new Triple(0, 1, -2), new Triple(1, 0, 3), new Triple(2, 1, 7));
+      console.log(m.toString());
+
+      console.log(m.transpose().toString());
+    </script>
+
+    <script>
+      // 矩阵乘法
+
+      // 带有行链接信息的矩阵，带有每一行第一个非零元在三元组数组中索引的信息
+      // 继承自上面的"M"
+      function RowLinkedM(row, col) {
+        M.call(this, row, col);
+        // Reflect.construct(M, [row, col], new.target);
+      }
+      RowLinkedM.prototype = Object.create(M.prototype);
+
+      // 计算并返回每一行第一个非零元在三元数组中的索引
+      RowLinkedM.prototype.calcRowLinked = function () {
+        const nonZeroCount = new Array(this.row);
+        nonZeroCount.fill(0);
+        for (let t of this.data) {
+          nonZeroCount[t.rowIndex]++;
+        }
+        const nonZeroPos = new Array(this.row);
+        nonZeroPos[0] = 0;
+        for (let i = 1; i < this.row; i++) {
+          nonZeroPos[i] = nonZeroPos[i - 1] + nonZeroCount[i - 1];
+        }
+        return nonZeroPos;
+      };
+
+      // 两个行链接信息矩阵相乘
+      RowLinkedM.prototype.multiply = function (otherRLM) {
+        if (this.col !== otherRLM.row) {
+          // 矩阵相乘前需保证前一个矩阵的列数等于后一个矩阵的行数
+          throw new Error('cannot be multiplied!');
+        }
+        const Q = new RowLinkedM(this.row, otherRLM.col);
+
+        const thisRL = this.calcRowLinked();
+        const otherRL = otherRLM.calcRowLinked();
+
+        for (let thisRow = 0; thisRow < this.row; thisRow++) {
+          let nextRowPos; // 下一行第一个非零元的索引
+          if (thisRow !== this.row - 1) {
+            nextRowPos = thisRL[thisRow + 1];
+          } else {
+            // 如果当前行为最后一行
+            nextRowPos = this.size();
+          }
+
+          // 计算当前行与另一矩阵中每一列的乘积，以数组索引表示另一矩阵的列索引
+          const accProduct = new Array(otherRLM.col);
+          accProduct.fill(0);
+
+          // 遍历当前行中每一个非零元并计算在另一个矩阵中的对应元，即另一个矩阵中，与当前非零元相乘的另一个非零元
+          for (let nzero = thisRL[thisRow]; nzero < nextRowPos; nzero++) {
+            const otherRowIndex = this.data[nzero].colIndex;
+
+            let nextOtherRowPos;
+            if (otherRowIndex !== otherRLM.row - 1) {
+              nextOtherRowPos = otherRL[otherRowIndex + 1];
+            } else {
+              nextOtherRowPos = otherRLM.size();
+            }
+
+            for (let mzero = otherRL[otherRowIndex]; mzero < nextOtherRowPos; mzero++) {
+              const thisValue = this.data[nzero].value;
+              const otherValue = otherRLM.data[mzero].value;
+              const otherCol = otherRLM.data[mzero].colIndex;
+
+              accProduct[otherCol] += thisValue * otherValue;
+            }
+          }
+
+          for (let otherColIndex = 0; otherColIndex < accProduct.length; otherColIndex++) {
+            if (!accProduct[otherColIndex]) {
+              continue;
+            }
+            Q.data.push(new Triple(thisRow, otherColIndex, accProduct[otherColIndex]));
+          }
+        }
+
+        return Q;
+      };
+
+      const rl0 = new RowLinkedM(2, 3);
+      rl0.data.push(new Triple(1, 0, 3), new Triple(1, 2, 5));
+      const rl1 = new RowLinkedM(3, 2);
+      rl1.data.push(new Triple(0, 0, 1), new Triple(2, 0, 1));
+
+      console.log('rl0:');
+      console.log(rl0.toString());
+      console.log('rl1:');
+      console.log(rl1.toString());
+
+      const rl2 = rl0.multiply(rl1);
+
+      console.log('rl2: ');
+      console.log(rl2.toString());
+    </script>
+  </body>
+</html>

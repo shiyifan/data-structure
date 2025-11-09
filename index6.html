@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>For Data Structure</h1>
+
+    <ul>
+      <li>广义表</li>
+    </ul>
+
+    <script>
+      // 广义表
+
+      // 原子节点
+      function GLValue(value) {
+        this.value = value;
+      }
+      // 表节点
+      function GL(head, tail) {
+        this.head = head;
+        this.tail = tail;
+      }
+
+      GL.prototype.toString = function () {
+        return printGL(this);
+      };
+
+      function printGL(glNode) {
+        if (glNode == null) {
+          return '';
+        } else if (glNode instanceof GLValue) {
+          return glNode.value;
+        } else {
+          /* 由于用"head"与"tail"表示广义表，所以非空表的tail一定是一个子表
+            但是该子表是逻辑上的子表，并不是广义表中真实存在的子表。输出的时候不需要添加"()"
+            “head”指向的才是真实的元素，所以当"head"指向了子表，那么该子表一定真实存在，
+            需要在两端添加"()" */
+          if (glNode.head instanceof GL) {
+            return '(' + printGL(glNode.head) + ')' + printGL(glNode.tail);
+          } else {
+            return printGL(glNode.head) + printGL(glNode.tail);
+          }
+        }
+      }
+
+      // 获取广义表的深度
+      GL.prototype.depth = function () {
+        return calcDepth(this);
+      };
+
+      function calcDepth(gl) {
+        // 原子的深度为0
+        if (gl instanceof GLValue) {
+          return 0;
+        }
+        // 空表深度为1
+        if (gl == null) {
+          return 1;
+        }
+
+        // 遍历广义表各个元素并计算表中各元素的深度
+        let max = 0;
+        for (let p = gl; p; p = p.tail) {
+          const d = calcDepth(p.head);
+          max < d && (max = d);
+        }
+
+        return max + 1; // 非空表的深度为各元素深度最大值加1
+      }
+
+      // 深度复制广义表
+      GL.prototype.copy = function () {
+        return copy(this);
+      };
+      function copy(gl) {
+        if (gl == null) {
+          return null;
+        }
+        if (gl instanceof GLValue) {
+          return new GLValue(gl.value);
+        }
+
+        return new GL(copy(gl.head), copy(gl.tail));
+      }
+      GL.createFromString = function (s) {
+        if (s === '') {
+          return null;
+        }
+
+        if (s[0] === '(') {
+          let matching = matchingIndex(s);
+          let sub = s.slice(1, matching);
+          let remaining = s.slice(matching + 1);
+          return new GL(GL.createFromString(sub), GL.createFromString(remaining));
+        }
+
+        if (s[0] === ')') {
+        }
+
+        return new GL(new GLValue(s[0]), GL.createFromString(s.slice(1)));
+      };
+
+      function matchingIndex(s) {
+        let k = 0;
+        for (let i = 0; i < s.length; i++) {
+          if (s[i] !== '(' && s[i] !== ')') {
+            continue;
+          }
+
+          if (s[i] === '(') {
+            k++;
+            continue;
+          }
+
+          k--;
+
+          if (!k) {
+            return i;
+          }
+        }
+      }
+
+      // [(a), ((b, c), d)]
+      const glt_c = new GL(new GLValue('c'));
+      const gl_bc = new GL(new GLValue('b'), glt_c);
+      const gl_bcd = new GL(gl_bc, new GL(new GLValue('d')));
+      const gl_abcd = new GL(new GLValue('a'), new GL(gl_bcd));
+
+      console.log(gl_abcd.toString());
+
+      const gl = new GL(new GLValue('1'), new GL(new GLValue('2'), new GL(new GLValue('3'), new GL(new GLValue('4')))));
+
+      console.log('gl: ', gl.toString());
+
+      const ngl = gl.copy();
+      console.log('ngl: ', ngl.toString());
+
+      const nglabcd = gl_abcd.copy();
+      console.log('nabcd: ', nglabcd.toString());
+
+      const gl1 = GL.createFromString('(a)((bc)d)');
+      console.log('gl1: ', gl1.toString());
+    </script>
+  </body>
+</html>

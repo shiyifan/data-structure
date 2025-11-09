@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h2>For Data Structure</h2>
+    <ul>
+      <li>串插入</li>
+      <li>串模式匹配</li>
+      <li>KMP匹配</li>
+    </ul>
+
+    <script>
+      // 串插入
+      const a = ['a', 'b', 'c', 'd', 'e'];
+      const b = ['1', '2', '3'];
+
+      // pos为索引
+      function ins(s, pos, t) {
+        const doAppend = pos === s.length;
+        const sOldLen = s.length;
+        const fwLength = t.length; // s中部分元素需要移动的距离
+        s.length = s.length + t.length;
+
+        if (doAppend) {
+          // t字符串直接添加至s字符串末尾
+          for (let i = 0; i < t.length; i++) {
+            s[sOldLen + i] = t[i];
+          }
+          return;
+        }
+
+        // 将s中部分元素向索引递增方向移动
+        for (let i = sOldLen - 1; i >= pos; i--) {
+          s[i + fwLength] = s[i];
+        }
+        // 将t中元素复制至s中
+        for (let i = pos; i <= pos + fwLength - 1; i++) {
+          s[i] = t[i - pos];
+        }
+      }
+
+      ins(a, 0, b);
+
+      console.log('a: ', a);
+    </script>
+
+    <script>
+      // 串模式匹配
+
+      const aa = 'abcde';
+      const bb = 'a';
+
+      console.log('match: ', patternMatch2(aa, bb));
+
+      // 串模式匹配, 返回在s中t第一次出现的索引，如果不存在则返回-1
+      function patternMatch(s, t) {
+        let matched = false;
+        let matchedIndex = -1;
+
+        for (let si = 0, ti = 0; ; ) {
+          if (matched && ti === t.length) {
+            // 如果t中所有字符均在s中按序匹配，则找到该子字符串
+            matchedIndex = si - t.length;
+            break;
+          }
+
+          if (!matched && si === s.length - t.length + 1) {
+            // 如果s中不存在按序匹配的子字符串
+            // 如果当前si至s末尾的长度小于t的长度，则无需继续匹配，直接返回
+            break;
+          }
+
+          if (s[si] === t[ti]) {
+            if (!matched) {
+              matched = true;
+              matchedIndex = si;
+            }
+            si++;
+            ti++;
+          } else {
+            if (matched) {
+              matched = false;
+              si = matchedIndex + 1;
+              matchedIndex = -1;
+            } else {
+              si++;
+            }
+            ti = 0;
+          }
+        }
+
+        return matchedIndex;
+      }
+
+      // 与'patternMatch'一样，不过更为简洁一些
+      function patternMatch2(s, t) {
+        let si = 0;
+        let ti = 0;
+
+        while (si < s.length && ti < t.length) {
+          if (si > s.length - t.length && ti === 0) {
+            // 如果si至s末尾的长度小于t的长度，而且当前没有已经匹配的字符，直接返回
+            break;
+          }
+
+          if (s[si] === t[ti]) {
+            si++;
+            ti++;
+          } else {
+            si = si - ti + 1;
+            ti = 0;
+          }
+        }
+
+        if (ti > 0) {
+          return si - ti;
+        } else {
+          return -1;
+        }
+      }
+    </script>
+
+    <script>
+      // KMP匹配
+
+      const ss = 'caabaabcced';
+      const pattern = 'aabaab';
+
+      console.log('kmp: ', kmpMatch(ss, pattern));
+
+      function kmpMatch(s, p) {
+        const next = kmpNext(p);
+        console.log('next: ', next);
+
+        let i = 0;
+        let j = 0;
+        while (i < s.length && j < p.length) {
+          if (j === -1 || s[i] === p[j]) {
+            i++;
+            j++;
+          } else {
+            j = next[j];
+          }
+        }
+
+        return j === p.length ? i - j : -1;
+      }
+
+      function kmpNext(s) {
+        const next = [-1];
+        let i = 0;
+        let j = -1;
+        while (i < s.length) {
+          if (j === -1 || s[i] === s[j]) {
+            i++;
+            j++;
+            next[i] = j;
+          } else {
+            j = next[j];
+          }
+        }
+        return next;
+      }
+    </script>
+  </body>
+</html>

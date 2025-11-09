@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>For Data Structure</h1>
+    <pre>
+无向图
+A------D      
+|      |      
+|      |      
+|      |      
+B------C-----E
+    </pre>
+    <ul>
+      <li>图的遍历</li>
+    </ul>
+
+    <script>
+      /*
+      无向图
+        A------D      
+        |      |      
+        |      |      
+        |      |      
+        B------C-----E
+      */
+    </script>
+    <script>
+      /* 邻接矩阵表示法 */
+
+      /* 顶点 */
+      function V_AdjMat(data) {
+        this.data = data;
+      }
+      /* 图 */
+      function G_AdjMat(vexs, edges) {
+        this.vexs = vexs; // 一维数组保存所有的顶点
+        this.edges = edges; // 二维数组表示顶点与顶点之间的边
+      }
+      G_AdjMat.prototype.indexOf = function (data) {
+        return this.vexs.findIndex(v => v.data === data);
+      };
+      /* 返回某一顶点的第一个邻接点 */
+      G_AdjMat.prototype.firstAdj = function (vex) {
+        const row = this.vexs.indexOf(vex);
+        const vexNum = this.vexs.length;
+
+        for (let i = 0; i < vexNum; i++) {
+          const e = this.edges[row][i];
+          if (e) return this.vexs[i];
+        }
+
+        /* 该顶点无邻接点 */
+        return null;
+      };
+      /* 返回某一顶点的下一个邻接点，相对于'adj'的下一个邻接点 */
+      G_AdjMat.prototype.nextAdj = function (vex, adj) {
+        const row = this.vexs.indexOf(vex);
+        const vexNum = this.vexs.length;
+        const start = this.vexs.indexOf(adj);
+
+        for (let i = start + 1; i < vexNum; i++) {
+          const e = this.edges[row][i];
+          if (e) return this.vexs[i];
+        }
+
+        /* adj是顶点vex的最后一个邻接点 */
+        return null;
+      };
+      /* 深度优先搜索 */
+      G_AdjMat.prototype.dfs = function (callback) {
+        const visited = new Array(this.vexs.length);
+
+        for (const v of this.vexs) {
+          dfs_recursive(this, v);
+        }
+
+        function dfs_recursive(g, v) {
+          const vIndex = g.vexs.indexOf(v);
+          if (visited[vIndex]) return;
+
+          visited[vIndex] = true;
+          callback(v);
+
+          for (let adj = g.firstAdj(v); adj; adj = g.nextAdj(v, adj)) {
+            dfs_recursive(g, adj);
+          }
+        }
+      };
+
+      const vexAdjMat = [new V_AdjMat('B'), new V_AdjMat('A'), new V_AdjMat('D'), new V_AdjMat('E'), new V_AdjMat('C')];
+      const g0 = new G_AdjMat(vexAdjMat);
+
+      const edgeAdjMat = new Array(vexAdjMat.length);
+      for (let i = 0; i < edgeAdjMat.length; i++) {
+        edgeAdjMat[i] = new Array(vexAdjMat.length);
+      }
+
+      edgeAdjMat[g0.indexOf('A')][g0.indexOf('B')] = 1;
+      edgeAdjMat[g0.indexOf('B')][g0.indexOf('A')] = 1;
+      edgeAdjMat[g0.indexOf('A')][g0.indexOf('D')] = 1;
+      edgeAdjMat[g0.indexOf('D')][g0.indexOf('A')] = 1;
+      edgeAdjMat[g0.indexOf('D')][g0.indexOf('C')] = 1;
+      edgeAdjMat[g0.indexOf('C')][g0.indexOf('D')] = 1;
+      edgeAdjMat[g0.indexOf('B')][g0.indexOf('C')] = 1;
+      edgeAdjMat[g0.indexOf('C')][g0.indexOf('B')] = 1;
+      edgeAdjMat[g0.indexOf('C')][g0.indexOf('E')] = 1;
+      edgeAdjMat[g0.indexOf('E')][g0.indexOf('C')] = 1;
+
+      g0.edges = edgeAdjMat;
+
+      let str = '';
+      g0.dfs(v => (str += v.data));
+      console.log('AdjMat: ', str);
+    </script>
+
+    <script>
+      /* 邻接多重表存储结构 */
+
+      /* 顶点 */
+      function V_AdjMultiL(data) {
+        this.data = data;
+        this.firstEdge = null; // 顶点关联的第一条边
+      }
+      /* 边 */
+      function E_AdjMultiL(aVex, bVex) {
+        this.aVex = aVex; // 用vexs数组中的索引表示顶点
+        this.aNext = null; // aVex端的下一条边
+        this.bVex = bVex;
+        this.bNext = null;
+      }
+      /* 图 */
+      function G_AdjMultiL(vexs) {
+        this.vexs = vexs; // 一维数组保存所有的顶点
+      }
+      G_AdjMultiL.prototype.indexOfData = function (data) {
+        return this.vexs.findIndex(v => v.data === data);
+      };
+      G_AdjMultiL.prototype.vexFromData = function (data) {
+        return this.vexs.find(v => v.data === data);
+      };
+      G_AdjMultiL.prototype.initEdges = function (edges) {
+        for (const e of edges) {
+          const { aVex: a, bVex: b } = e;
+          const vexA = this.vexs[a];
+          const vexB = this.vexs[b];
+
+          e.aNext = vexA.firstEdge;
+          vexA.firstEdge = e;
+          e.bNext = vexB.firstEdge;
+          vexB.firstEdge = e;
+        }
+      };
+      G_AdjMultiL.prototype.firstAdj = function (v) {
+        if (!v.firstEdge) return; // 如果该顶点度为0
+
+        const { aVex, bVex } = v.firstEdge;
+        const vIndex = this.vexs.indexOf(v);
+
+        if (aVex !== vIndex) return this.vexs[aVex]; // 顶点关联的边中，非当前的顶点为邻接点
+        if (bVex !== vIndex) return this.vexs[bVex];
+      };
+      /* 返回某一顶点的下一个邻接点，相对于'adj'的下一个邻接点 */
+      G_AdjMultiL.prototype.nextAdj = function (v, adj) {
+        const vIndex = this.vexs.indexOf(v);
+        const adjIndex = this.vexs.indexOf(adj);
+
+        let found = false;
+        // 遍历顶点的边链表
+        for (let e = v.firstEdge; e; ) {
+          const { aVex, bVex, aNext, bNext } = e;
+
+          // 如果边的aVex端是当前顶点v
+          if (aVex === vIndex) {
+            if (found) {
+              return this.vexs[bVex];
+            }
+            found = bVex === adjIndex;
+            e = e.aNext;
+            continue;
+          }
+
+          // 如果边的bVex端是当前顶点v
+          if (bVex === vIndex) {
+            if (found) {
+              return this.vexs[aVex];
+            }
+            found = aVex === adjIndex;
+            e = e.bNext;
+            continue;
+          }
+
+          throw new Error('error!');
+        }
+
+        // adj为v的最后一个邻接顶点
+        return null;
+      };
+      /* 深度优先遍历 */
+      G_AdjMultiL.prototype.dfs = function (callback) {
+        const visited = new Array(this.vexs.length);
+
+        for (const v of this.vexs) {
+          dfs_recursive(this, v);
+        }
+
+        function dfs_recursive(g, v) {
+          const vIndex = g.vexs.indexOf(v);
+          if (visited[vIndex]) return;
+
+          visited[vIndex] = true;
+          callback(v);
+
+          for (let adj = g.firstAdj(v); adj; adj = g.nextAdj(v, adj)) {
+            dfs_recursive(g, adj);
+          }
+        }
+      };
+      /* 深度优先遍历，非递归方式 */
+      G_AdjMultiL.prototype.dfs_loop = function (callback) {
+        const visited = new Array(this.vexs.length);
+
+        for (const v of this.vexs) {
+          dfs_nonRecursive(this, v);
+        }
+
+        function dfs_nonRecursive(g, v) {
+          const stack = [];
+          stack.push({ vex: v });
+
+          while (stack.length !== 0) {
+            const sTop = stack.at(-1);
+            const { vex: top, lastAdj } = sTop; // 'lastAdj'表示顶点上一次访问的邻接点
+            const topIndex = g.vexs.indexOf(top);
+
+            if (!visited[topIndex]) {
+              visited[topIndex] = true;
+              callback(top);
+            }
+
+            /* 查找顶点的未访问的邻接点，如果能找到则入栈，否则弹出当前顶点 */
+            /* 根据'lastAdj'，从上一次访问的邻接点继续查找下一个未访问的邻接点,
+            未查找过邻接点的顶点将从头开始查找 */
+            let adj = lastAdj || g.firstAdj(top);
+            while (adj) {
+              const adjIndex = g.vexs.indexOf(adj);
+              if (!visited[adjIndex]) {
+                break;
+              }
+              adj = g.nextAdj(top, adj);
+            }
+
+            if (adj) {
+              sTop.lastAdj = adj; // 保存新的未访问的邻接点，以便下一次查找从这里开始
+              stack.push({ vex: adj });
+            } else {
+              stack.pop();
+            }
+          }
+        }
+      };
+
+      /* 广度优先遍历，非递归
+      类似于树的按层遍历，依次遍历距离某一顶点1、2、3...长度的邻接点 */
+      G_AdjMultiL.prototype.bfs = function (callback) {
+        const visited = new Array(this.vexs.length);
+
+        for (const v of this.vexs) {
+          bfs_loop(this, v);
+        }
+
+        function bfs_loop(g, v) {
+          const vIndex = g.vexs.indexOf(v);
+
+          /* 如果某顶点已被访问，则表明与该顶点连通的其他顶点均已被访问，无需再遍历该顶点 */
+          if (visited[vIndex]) return;
+
+          visited[vIndex] = true;
+          callback(v);
+
+          const q = []; // 队列，保存刚刚已访问的顶点，后续将遍历队列里顶点的所有未访问的邻接点
+          q.push(v);
+
+          // 当队列为空时，表示不再有某一顶点的邻接点尚未访问, 与队头连通的所有顶点均已被遍历
+          while (q.length !== 0) {
+            const head = q.shift();
+
+            /* 将队头出队，然后访问并入队所有未访问的队头的邻接点 */
+            for (let adj = g.firstAdj(head); adj; adj = g.nextAdj(head, adj)) {
+              const adjIndex = g.vexs.indexOf(adj);
+
+              /* 当图中相同“层次”（即距离起始顶点有相同路径长度）顶点具有同一个邻接点时，遍历前一顶点时该邻接点已被访问，
+              当遍历后一顶点的邻接点时，需排除该邻接点 */
+              if (visited[adjIndex]) continue;
+
+              visited[adjIndex] = true;
+              callback(adj);
+              q.push(adj); // 入队，等待后续循环的出队以及遍历邻接点
+            }
+          }
+        }
+      };
+
+      const g1Vexs = [new V_AdjMultiL('A'), new V_AdjMultiL('B'), new V_AdjMultiL('C'), new V_AdjMultiL('D'), new V_AdjMultiL('E')];
+      const g1 = new G_AdjMultiL(g1Vexs);
+
+      const g1Edges = [
+        new E_AdjMultiL(g1.indexOfData('A'), g1.indexOfData('B')),
+        new E_AdjMultiL(g1.indexOfData('D'), g1.indexOfData('A')),
+        new E_AdjMultiL(g1.indexOfData('D'), g1.indexOfData('C')),
+        new E_AdjMultiL(g1.indexOfData('C'), g1.indexOfData('B')),
+        new E_AdjMultiL(g1.indexOfData('C'), g1.indexOfData('E')),
+      ];
+
+      g1.initEdges(g1Edges);
+
+      let sstr = '';
+      g1.dfs_loop(v => (sstr += v.data));
+
+      console.log('AdjMultiL dfs_loop: ', sstr);
+
+      let ss = '';
+      g1.bfs(v => (ss += v.data));
+      console.log('AdjMultiL bfs: ', ss);
+    </script>
+  </body>
+</html>

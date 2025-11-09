@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>For Data Structure</title>
+  </head>
+  <body>
+    <h2>For Data Structure</h2>
+    <ul>
+      <li>二叉树的遍历</li>
+      <li>线索二叉树</li>
+    </ul>
+
+    <script>
+      // 树结点
+      function TreeNode(data, left, right) {
+        this.data = data;
+        this.left = left;
+        this.right = right;
+      }
+      TreeNode.prototype.preorder = function (callback) {
+        treePreorder(this, callback);
+      };
+      TreeNode.prototype.inorder = function (callback) {
+        treeInorder(this, callback); // 第一次压栈
+      };
+      TreeNode.prototype.inorderLoop = function (callback) {
+        treeInorderLoop(this, callback);
+      };
+      TreeNode.prototype.postorder = function (callback) {
+        treePostorder(this, callback);
+      };
+
+      function treePreorder(root, callback) {
+        if (!root) return;
+
+        callback(root);
+
+        treePreorder(root.left, callback);
+        treePreorder(root.right, callback);
+      }
+
+      function treeInorder(root, callback) {
+        if (!root) return;
+
+        treeInorder(root.left, callback);
+
+        callback(root);
+
+        treeInorder(root.right, callback);
+      }
+
+      function treePostorder(root, callback) {
+        if (!root) return;
+
+        treePostorder(root.left, callback);
+        treePostorder(root.right, callback);
+
+        callback(root);
+      }
+
+      const tnA = new TreeNode('a');
+      const tnB = new TreeNode('b');
+      const tnC = new TreeNode('c');
+      const tnPlus = new TreeNode('*', tnA, tnB);
+      const tnMinus = new TreeNode('-', tnPlus, tnC);
+
+      let s = '';
+      tnMinus.preorder(n => (s += n.data));
+      console.log('preorder: ', s);
+      s = '';
+      tnMinus.inorderLoop(n => (s += n.data));
+      console.log('inorder: ', s);
+      s = '';
+      tnMinus.postorder(n => (s += n.data));
+      console.log('postorder: ', s);
+
+      // 中序遍历非递归算法
+      function treeInorderLoop(root, callback) {
+        const stack = [];
+        stack.push(root);
+
+        while (stack.length !== 0) {
+          while (true) {
+            let top = stack.at(-1);
+            if (top) {
+              stack.push(top.left);
+              continue;
+            }
+
+            stack.pop(); // 弹出因寻找最左节点而插入的空结点
+
+            if (stack.length === 0) return;
+
+            const lastTop = stack.pop(); // 此时栈顶为树中最左侧结点
+            callback(lastTop);
+            stack.push(lastTop.right);
+          }
+        }
+      }
+
+      const ss = 'abc  de g  f   ';
+
+      /* 从先序遍历的字符串中创建二叉树 */
+      function createBiTree(s) {
+        const stack = [];
+
+        for (let c of s) {
+          let top = stack.at(-1);
+
+          // 非空格字符表示树中实际的结点。实际的结点需要入栈然后继续创建该结点的子树结点
+          if (c !== ' ') {
+            const newNode = new StNode(new TreeNode(c), 'left');
+            // 如果栈顶也是非空格字符，那么新的结点'newNode'一定是栈顶结点的子树结点
+            if (top) {
+              top.node[top.which] = newNode.node;
+            }
+            stack.push(newNode);
+            continue;
+          }
+
+          // c === ' '
+          // 栈顶元素非空格且当前字符为空格，表示栈顶结点
+          if (top.which === 'left') {
+            // 下一个字符应该是栈顶结点的右子树
+            top.which = 'right';
+            continue;
+          }
+
+          // top.which === 'right'
+          // 当前字符为空格且栈顶结点需要创建右子树时，栈顶结点的树已经创建完成，需要弹栈返回上一层树
+          stack.pop();
+          // 如果弹栈至栈空，表示所有的树均已创建完成
+          if (stack.length === 0) {
+            return top.node;
+          }
+
+          // 返回至第一个右子树尚未创建的结点
+          top = stack.at(-1);
+          while (top.which === 'right') {
+            stack.pop();
+
+            // 如果弹栈至栈空，表示所有的树均已创建完成
+            if (stack.length === 0) {
+              return top.node;
+            }
+
+            top = stack.at(-1);
+          }
+          // 使新创建的结点为该结点的右子树
+          top.which = 'right';
+        }
+
+        // 栈中元素类型
+        function StNode(node, which) {
+          this.node = node; // TreeNode结点
+          this.which = which; // 指示当前结点下一颗被赋值的子树
+        }
+      }
+
+      const root = createBiTree(ss);
+      let str = '';
+      root.preorder(n => (str += n.data));
+      console.log('str: ', str);
+    </script>
+
+    <script>
+      /* 线索二叉树结点 */
+      function ThreadTreeNode(data, left, right, leftThread, rightThread) {
+        TreeNode.call(this, data, left, right);
+        this.leftThread = leftThread; // 左指针是否是线索
+        this.rightThread = rightThread; // 右指针是否是线索
+
+        // left为线索时，指向前一个结点，right为线索时，指向后一个结点
+      }
+      ThreadTreeNode.prototype = Object.create(TreeNode.prototype);
+
+      /* 中序线索化二叉树并返回头结点 */
+      function inThread(root) {
+        const head = new ThreadTreeNode('<HEAD>');
+        head.left = root;
+        head.leftThread = false;
+
+        let pre = head; // 上一个访问过的结点
+        inOrderLoop(root);
+        pre.right = head;
+        pre.rightThread = true;
+
+        return head;
+
+        // 递归中序遍历并线索化
+        function inOrder(node) {
+          if (!node) return;
+
+          inOrder(node.left);
+
+          /* 此时访问中间的结点，表示该结点的左子树均遍历完成，需要将左子树中最右下的结点线索化 
+  pre应指向最右下的结点 */
+          if (!pre.right) {
+            pre.right = node;
+            pre.rightThread = true;
+          }
+          if (!node.left) {
+            node.left = pre;
+            node.leftThread = true;
+          }
+          pre = node;
+
+          inOrder(node.right);
+        }
+
+        // 非递归中序遍历并线索化
+        /* 仿照上面非递归遍历与递归遍历线索化的过程 */
+        function inOrderLoop(node) {
+          const stack = [];
+          stack.push(root);
+
+          while (stack.length !== 0) {
+            while (true) {
+              let top = stack.at(-1);
+              if (top) {
+                stack.push(top.left);
+                continue;
+              }
+
+              stack.pop(); // 弹出因寻找最左节点而插入的空结点
+
+              if (stack.length === 0) return;
+
+              const lastTop = stack.pop(); // 此时栈顶为树中最左侧结点
+
+              /* 线索化过程 */
+              if (!pre.right) {
+                pre.right = lastTop;
+                pre.rightThread = true;
+              }
+              if (!lastTop.left) {
+                lastTop.left = pre;
+                lastTop.leftThread = true;
+              }
+              pre = lastTop;
+
+              stack.push(lastTop.right);
+            }
+          }
+        }
+      }
+
+      /* 中序线索化遍历 */
+      function inThreadOrder(head, callback) {
+        let p = head.right;
+
+        while (p !== head) {
+          callback(p);
+          if (p.rightThread) {
+            p = p.right;
+            continue;
+          }
+          p = p.right;
+          while (!p.leftThread) p = p.left;
+        }
+      }
+
+      function preThread(root) {
+        const head = new ThreadTreeNode('<HEAD>');
+        head.left = root;
+        head.leftThread = false;
+
+        let pre = head;
+        preOrder(root);
+        pre.right = head;
+        pre.rightThread = true;
+
+        return head;
+
+        // 先序遍历并线索化
+        function preOrder(node) {
+          if (!node) return;
+
+          if (!pre.right) {
+            pre.rightThread = true;
+            pre.right = node;
+          }
+          if (!node.left) {
+            node.left = pre;
+            node.leftThread = true;
+          }
+          pre = node;
+
+          !node.leftThread && preOrder(node.left);
+          !node.rightThread && preOrder(node.right);
+        }
+      }
+
+      // 先序线索化遍历
+      function preThreadOrder(head, callback) {
+        let p = head.right;
+
+        while (p !== head) {
+          callback(p);
+          if (p.rightThread) {
+            p = p.right;
+            continue;
+          }
+          if (!p.leftThread) {
+            p = p.left;
+            continue;
+          }
+          p = p.right;
+        }
+      }
+
+      const ttnA = new ThreadTreeNode('a');
+      const ttnB = new ThreadTreeNode('b');
+      const ttnC = new ThreadTreeNode('c');
+      const ttnD = new ThreadTreeNode('d');
+
+      ttnA.left = ttnB;
+      ttnA.right = ttnC;
+      ttnB.left = ttnD;
+
+      const h = preThread(ttnA);
+      let hstr = '';
+      preThreadOrder(h, p => (hstr += p.data));
+      console.log('hstr: ', hstr);
+    </script>
+  </body>
+</html>
