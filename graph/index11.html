@@ -8,6 +8,21 @@
   </head>
   <body>
     <h1>For Data Structure</h1>
+    <pre>
+无向图
+ A ---------- B                                
+ |            |                                
+ |            |        F -------- G            
+ |            |                                
+ |            |                                
+ |            |                                
+ D ---------- C                                
+  \           /                                
+   \         /                                 
+    \       /                                  
+     \     /                                   
+      - E - 
+    </pre>
     <ul>
       <li>根据无向图的连通分量创建生成森林（以二叉链表表示）</li>
     </ul>
@@ -21,6 +36,9 @@
       Graph.prototype.pos = function (data) {
         return this.vexes.findIndex(v => v.data === data);
       };
+      Graph.prototype.vex = function (data) {
+        return this.vexes.find(v => v.data === data);
+      };
       Graph.prototype.initEdges = function (edges) {
         for (const e of edges) {
           const { xVex, yVex } = e;
@@ -31,6 +49,44 @@
           e.yNext = y.firstEdge;
           y.firstEdge = e;
         }
+      };
+      Graph.prototype.firstAdj = function (v) {
+        const i = this.vexes.indexOf(v);
+        const { xVex, yVex } = v.firstEdge;
+
+        if (xVex === i) return this.vexes[yVex];
+
+        if (yVex === i) return this.vexes[xVex];
+      };
+      Graph.prototype.nextAdj = function (v, adj) {
+        const i = this.vexes.indexOf(v);
+
+        let found = false;
+        for (let e = v.firstEdge; e; ) {
+          const { xVex, xNext, yVex, yNext } = e;
+
+          if (found) {
+            // 已找到当前邻接点adj的下一条边
+            if (xVex === i) return this.vexes[yVex];
+
+            if (yVex === i) return this.vexes[xVex];
+          }
+
+          if (xVex === i) {
+            found = this.vexes[yVex] === adj;
+            e = xNext;
+            continue;
+          }
+
+          if (yVex === i) {
+            found = this.vexes[xVex] === adj;
+            e = yNext;
+            continue;
+          }
+        }
+
+        // 没找到adj的下一个邻接点，或者adj是最后一个邻接点
+        return null;
       };
       /* 顶点 */
       function Vertex(data) {
@@ -65,14 +121,63 @@
       ];
       g0.initEdges(edges);
 
+      const root = forestFromGraph(g0);
+      console.log(root);
+
       /* 根据无向图g的"深度优先遍历"创建生成森林 */
       function forestFromGraph(g) {
         const visited = new Array(g.vexes.length);
+        let forestRoot = null; // 森林的树根
+        let lastRoot = null; // 保存上一个已遍历的连通分量的树根
 
         for (let vIndex = 0; vIndex < g.vexes.length; vIndex++) {
-          if (visited[vIndex]) continue;
+          if (visited[vIndex]) continue; // 如果图中某一顶点已遍历，则所有与该顶点连通的顶点均已被遍历
 
-          // 将从vIndex顶点开始遍历, 并根据该顶点所在的连通分量创建一棵生成树
+          const v = g.vexes[vIndex]; // 该未遍历的顶点将成为森林中一棵树的树根
+          // 准备创建生成树
+          const treeRoot = new TreeNode(v.data);
+          if (!lastRoot) {
+            // 森林二叉树的树根为第一棵树的树根
+            forestRoot = lastRoot = treeRoot;
+          } else {
+            // 森林中其他树构成第一棵树的右子树
+            lastRoot.nextSibling = treeRoot;
+            lastRoot = treeRoot;
+          }
+
+          // 从顶点开始深度优先遍历, 并根据该顶点所在的连通分量创建一棵生成树
+          spTreeFromDFS(g, v, lastRoot);
+        }
+
+        return forestRoot;
+
+        // 根据深度优先遍历创建生成树
+        // v: 图中的顶点，parent: v对应的生成树中的树根
+        function spTreeFromDFS(g, v, parent) {
+          const vIndex = g.vexes.indexOf(v);
+          visited[vIndex] = true;
+
+          let isFirstAdj = true;
+          for (let adj = g.firstAdj(v); adj; adj = g.nextAdj(v, adj)) {
+            const adjIndex = g.vexes.indexOf(adj);
+
+            if (visited[adjIndex]) continue;
+
+            visited[adjIndex] = true;
+
+            if (isFirstAdj) {
+              // 顶点的第一个邻接点将变成左子结点
+              isFirstAdj = false;
+              parent.firstChild = new TreeNode(adj.data);
+              parent = parent.firstChild;
+            } else {
+              // 顶点的后续邻接点将变成左子结点的右子结点
+              parent.nextSibling = new TreeNode(adj.data);
+              parent = parent.nextSibling;
+            }
+
+            spTreeFromDFS(g, adj, parent); // 递归遍历邻接点
+          }
         }
       }
     </script>
