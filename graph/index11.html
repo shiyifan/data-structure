@@ -12,7 +12,69 @@
       <li>根据无向图的连通分量创建生成森林（以二叉链表表示）</li>
     </ul>
     <script>
-      
+      /* 用邻接多重表表示图，二叉链表表示生成森林，采用深度优先遍历创建生成树 */
+
+      /* 图，'vexes'表示所有顶点构成的一维数组 */
+      function Graph(vexes) {
+        this.vexes = vexes;
+      }
+      Graph.prototype.pos = function (data) {
+        return this.vexes.findIndex(v => v.data === data);
+      };
+      Graph.prototype.initEdges = function (edges) {
+        for (const e of edges) {
+          const { xVex, yVex } = e;
+          const [x, y] = [this.vexes[xVex], this.vexes[yVex]];
+
+          e.xNext = x.firstEdge;
+          x.firstEdge = e;
+          e.yNext = y.firstEdge;
+          y.firstEdge = e;
+        }
+      };
+      /* 顶点 */
+      function Vertex(data) {
+        this.data = data; // 顶点表示的值
+        this.firstEdge = null; // 与该顶点相关联的第一条边
+      }
+      /* 边 */
+      function Edge(xVex, yVex) {
+        this.xVex = xVex; // x端的顶点索引
+        this.yVex = yVex; // y端的顶点索引
+        this.xNext = null; // x端的下一条边
+        this.yNext = null; // y端的下一条边
+      }
+      /* 森林中树的结点，以二叉链表结构保存 */
+      function TreeNode(data, firstChild, nextSibling) {
+        this.data = data; // 树结点表示的值
+        this.firstChild = firstChild; // 树结点的第一个孩子结点
+        this.nextSibling = nextSibling; // 树结点的下一个兄弟结点
+      }
+
+      const vexes = [new Vertex('a'), new Vertex('b'), new Vertex('c'), new Vertex('d'), new Vertex('e'), new Vertex('f'), new Vertex('g')];
+      const g0 = new Graph(vexes);
+
+      const edges = [
+        new Edge(g0.pos('a'), g0.pos('b')),
+        new Edge(g0.pos('b'), g0.pos('c')),
+        new Edge(g0.pos('c'), g0.pos('d')),
+        new Edge(g0.pos('a'), g0.pos('d')),
+        new Edge(g0.pos('d'), g0.pos('e')),
+        new Edge(g0.pos('e'), g0.pos('c')),
+        new Edge(g0.pos('f'), g0.pos('g')),
+      ];
+      g0.initEdges(edges);
+
+      /* 根据无向图g的"深度优先遍历"创建生成森林 */
+      function forestFromGraph(g) {
+        const visited = new Array(g.vexes.length);
+
+        for (let vIndex = 0; vIndex < g.vexes.length; vIndex++) {
+          if (visited[vIndex]) continue;
+
+          // 将从vIndex顶点开始遍历, 并根据该顶点所在的连通分量创建一棵生成树
+        }
+      }
     </script>
   </body>
 </html>
