@@ -22,6 +22,18 @@
     \       /                                  
      \     /                                   
       - E - 
+    
+有向图
+                    
+     A              
+    / \             
+   /   \            
+  /     \           
+ v       v          
+ B ----> C ------> D
+ ^                 |
+ |                 |
+ |-----------------+
     </pre>
     <ul>
       <li>根据无向图的连通分量创建生成森林（以二叉链表表示）</li>
@@ -251,17 +263,15 @@
         return null;
       };
 
-      const dvexes = [new DVertex('V1'), new DVertex('V2'), new DVertex('V3'), new DVertex('V4')];
+      const dvexes = [new DVertex('A'), new DVertex('B'), new DVertex('C'), new DVertex('D')];
       const g1 = new DGraph(dvexes);
       console.log(g1);
       const arcs = [
-        new Arc(g1.pos('V1'), g1.pos('V2')),
-        new Arc(g1.pos('V1'), g1.pos('V3')),
-        new Arc(g1.pos('V4'), g1.pos('V1')),
-        new Arc(g1.pos('V4'), g1.pos('V2')),
-        new Arc(g1.pos('V4'), g1.pos('V3')),
-        new Arc(g1.pos('V3'), g1.pos('V4')),
-        new Arc(g1.pos('V3'), g1.pos('V1')),
+        new Arc(g1.pos('A'), g1.pos('B')),
+        new Arc(g1.pos('A'), g1.pos('C')),
+        new Arc(g1.pos('B'), g1.pos('C')),
+        new Arc(g1.pos('C'), g1.pos('D')),
+        new Arc(g1.pos('D'), g1.pos('B')),
       ];
       g1.initArcs(arcs);
 
