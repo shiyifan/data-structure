@@ -25,6 +25,7 @@
     </pre>
     <ul>
       <li>根据无向图的连通分量创建生成森林（以二叉链表表示）</li>
+      <li>计算有向图的强连通分量的顶点集</li>
     </ul>
     <script>
       /* 用邻接多重表表示图，二叉链表表示生成森林，采用深度优先遍历创建生成树 */
@@ -178,6 +179,145 @@
 
             spTreeFromDFS(g, adj, parent); // 递归遍历邻接点
           }
+        }
+      }
+    </script>
+
+    <script>
+      /* 有向图，十字链表表示法 */
+      function DGraph(vexes) {
+        this.vexes = vexes;
+      }
+      /* 有向图的弧 */
+      function Arc(tail, head) {
+        this.head = head; // 弧头，顶点在数组中的索引
+        this.tail = tail; // 弧尾，顶点在数组中的索引
+        this.headNext = null; // 相同弧头的下一条弧
+        this.tailNext = null; // 相同弧尾的下一条弧
+      }
+      /* 有向图的顶点 */
+      function DVertex(data) {
+        this.data = data;
+        this.firstIn = null; // 顶点的第一条入弧
+        this.firstOut = null; // 顶点的第一条出弧
+      }
+      DGraph.prototype.pos = function (data) {
+        return this.vexes.findIndex(v => v.data === data);
+      };
+      DGraph.prototype.vex = function (data) {
+        return this.vexes.find(v => v.data === data);
+      };
+      DGraph.prototype.initArcs = function (arcs) {
+        for (const a of arcs) {
+          const { head, tail } = a;
+          const [vHead, vTail] = [this.vexes[head], this.vexes[tail]];
+
+          a.headNext = vHead.firstIn;
+          a.tailNext = vTail.firstOut;
+          vHead.firstIn = vTail.firstOut = a;
+        }
+      };
+      /* 获取顶点的第一个邻接点, 'isIn === true'表示入弧邻接点，否则为出弧邻接点 */
+      DGraph.prototype.firstAdj = function (v, isIn) {
+        const arc = isIn ? v.firstIn : v.firstOut;
+        if (!arc) return null;
+
+        return isIn ? this.vexes[arc.tail] : this.vexes[arc.head];
+      };
+      /* 获取相对于邻接点adj的下一个邻接点，'isIn'同上 */
+      DGraph.prototype.nextAdj = function (v, adj, isIn) {
+        const adjIndex = this.vexes.indexOf(adj);
+
+        let found = false;
+        if (isIn) {
+          for (let a = v.firstIn; a; a = a.headNext) {
+            if (found) return this.vexes[a.tail];
+
+            found = a.tail === adjIndex;
+          }
+          return null;
+        }
+
+        // isIn === false
+        for (let a = v.firstOut; a; a = a.tailNext) {
+          if (found) return this.vexes[a.head];
+
+          found = a.head === adjIndex;
+        }
+        return null;
+      };
+
+      const dvexes = [new DVertex('V1'), new DVertex('V2'), new DVertex('V3'), new DVertex('V4')];
+      const g1 = new DGraph(dvexes);
+      console.log(g1);
+      const arcs = [
+        new Arc(g1.pos('V1'), g1.pos('V2')),
+        new Arc(g1.pos('V1'), g1.pos('V3')),
+        new Arc(g1.pos('V4'), g1.pos('V1')),
+        new Arc(g1.pos('V4'), g1.pos('V2')),
+        new Arc(g1.pos('V4'), g1.pos('V3')),
+        new Arc(g1.pos('V3'), g1.pos('V4')),
+        new Arc(g1.pos('V3'), g1.pos('V1')),
+      ];
+      g1.initArcs(arcs);
+
+      const scc = calcSCComponent(g1);
+
+      console.log('scc: ', scc);
+
+      /* 计算有向图的强连通分量(Strongly Connected Component)的顶点集 */
+      function calcSCComponent(dg) {
+        const visited = new Array(dg.vexes.length); // 保存有向图中所有顶点的访问状态
+        // 保存dfs遍历时产生的多个子图的顶点集，而且顶点集按照递归顺序排列，子图中的顶点在一次dfs过程中均可被访问
+        const subDG = [];
+
+        /* 先以顺序（弧尾 => 弧头）方向遍历有向图，如果是非强连通图遍历时会出现多个子图 */
+        for (let v of dg.vexes) {
+          const vIndex = dg.vexes.indexOf(v);
+          if (visited[vIndex]) continue;
+
+          const finishedV = [];
+          subDG.push(finishedV); // 保存每个子图
+          dfs(dg, v, dg.vexes, visited, finishedV, true); // 从顶点v开始dfs顺序遍历
+        }
+
+        const sccomponents = []; // 保存所有的强连通分量
+        /* 以逆序（弧头 => 弧尾）遍历每一个子图 */
+        for (const finishedV of subDG) {
+          const subVisited = new Array(finishedV.length); // 记录每个子图遍历时顶点是否已访问的状态
+
+          for (let i = finishedV.length - 1; i >= 0; i--) {
+            if (subVisited[i]) continue;
+
+            /* 逆序遍历每一个子图时仍可能出现多个子图，出现的每一个子图就是有向图dg的强连通分量 */
+            const lastV = finishedV[i];
+            const subFinished = []; // 记录逆序遍历时经过的每个顶点
+            dfs(dg, lastV, finishedV, subVisited, subFinished, false);
+            sccomponents.push(subFinished); // 每次逆序遍历子图所经过的点都是一个强连通分量的顶点集
+          }
+        }
+
+        return sccomponents;
+
+        // 深度遍历图dg，并记录遍历时所经过的顶点
+        /* 
+          v：遍历的起始顶点
+          vexes：顶点v所在的顶点数组
+          visited：记录顶点数组中每个顶点是否已访问的状态
+            注意，vexes与visited必须相对应，即visited的索引一定表示vexes中对应的顶点，
+          finishedV：保存遍历时所经过的顶点，以递归的顺序保存，即最先访问的顶点为数组最后一个元素
+          tailToHead：当按照从弧尾到弧头的方向遍历时为true, 反之为false 
+        */
+        function dfs(dg, v, vexes, visited, finishedV, tailToHead) {
+          const vIndex = vexes.indexOf(v);
+          if (visited[vIndex]) return;
+
+          visited[vIndex] = true;
+          for (let adj = dg.firstAdj(v, !tailToHead); adj; adj = dg.nextAdj(v, adj, !tailToHead)) {
+            dfs(dg, adj, vexes, visited, finishedV, tailToHead);
+          }
+
+          finishedV.push(v); // 按递归顺序记录被遍历的顶点
         }
       }
     </script>
