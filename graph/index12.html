@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>For Data Structure</h1>
+    <ul>
+      <li>求解网的最小生成树(Minimal Spanning Tree)</li>
+    </ul>
+
+    <script>
+      /* 求解网的最小生成树(Minimal Spanning Tree) */
+
+      // 网，边上带有权值的无向图
+      // 采用邻接矩阵存储结构
+      function Network(vexes, edges) {
+        this.vexes = vexes; // 一维数组保存所有顶点
+        this.edges = edges; // 二维数组保存边，数组的值表示边上的权值, '-1'表示两个顶点不连通
+      }
+      // 返回该网的最小生成树（普利姆Prim算法）
+      Network.prototype.mst_Prim = function () {
+        // 用于计算结点间最小权值的数组
+        // 索引对应于顶点数组，数组中的元素结构为: { vex: 与当前索引表示的顶点构成最小权值的边的顶点的索引, weight: 权值 }
+        const weights = new Array(this.vexes.length);
+
+        // 从第一个顶点开始，该点构成初始的集合U，U中的所有顶点的权值均为0
+        weights[0] = { vexIndex: null, weight: 0 };
+        let lastMinimal = 0;
+        let remainingVex = this.vexes.length - 1;
+
+        while (remainingVex) {
+          for (let i = 1; i < weights.length; i++) {
+            if (weights[i] == null) {
+              weights[i] = { vexIndex: null, weight: Number.MAX_VALUE };
+            }
+
+            if (weights[i].weight === 0) continue;
+
+            const iWeight = this.edges[lastMinimal][i];
+            if (iWeight && weights[i].weight > iWeight) {
+              weights[i].weight = iWeight;
+              weights[i].vexIndex = lastMinimal;
+            }
+          }
+
+          const w = minimalWeight(weights);
+          weights[w].weight = 0;
+          lastMinimal = w;
+
+          remainingVex--;
+        }
+
+        console.log('weights: ', weights);
+
+        function minimalWeight(weights) {
+          let w;
+          for (let i = 0; i < weights.length; i++) {
+            if (weights[i].weight === 0) continue;
+
+            if (w == null || weights[w].weight > weights[i].weight) {
+              w = i;
+            }
+          }
+
+          if (w == null) throw new Error('error!');
+
+          return w;
+        }
+      };
+
+      const vexes = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
+      const edges = new Array(vexes.length);
+      for (let i = 0; i < edges.length; i++) {
+        edges[i] = new Array(vexes.length);
+      }
+      edges[0][1] = edges[1][0] = 6;
+      edges[0][2] = edges[2][0] = 1;
+      edges[0][3] = edges[3][0] = 5;
+
+      edges[1][4] = edges[4][1] = 3;
+      edges[1][2] = edges[2][1] = 5;
+
+      edges[2][4] = edges[4][2] = 6;
+      edges[2][5] = edges[5][2] = 4;
+      edges[2][3] = edges[3][2] = 5;
+
+      edges[4][5] = edges[5][4] = 6;
+      edges[5][3] = edges[3][5] = 2;
+
+      const n0 = new Network(vexes, edges);
+      n0.mst_Prim();
+    </script>
+  </body>
+</html>
