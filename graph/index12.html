@@ -27,7 +27,7 @@
       集合V-U中最小的边的端点加入U中，然后再次寻找。直至U == V */
       Network.prototype.mst_Prim = function () {
         // 用于计算结点间最小权值的数组
-        // 索引对应于顶点数组，数组中的元素结构为: { vex: 与当前索引表示的顶点构成最小权值的边的顶点的索引, weight: 权值 }
+        // 索引对应于顶点数组，数组中的元素结构为: { vexIndex: 与当前索引表示的顶点构成最小权值的边的顶点的索引, weight: 权值 }
         const weights = new Array(this.vexes.length);
 
         // 从第一个顶点开始，该点构成初始的集合U，U中的所有顶点的权值均为0
