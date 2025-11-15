@@ -21,7 +21,10 @@
         this.vexes = vexes; // 一维数组保存所有顶点
         this.edges = edges; // 二维数组保存边，数组的值表示边上的权值, '-1'表示两个顶点不连通
       }
+
       // 返回该网的最小生成树（普利姆Prim算法）
+      /* 设集合U为全部顶点的集合V的非空子集，集合U初始仅包含一个顶点，反复寻找集合U与V-U之间权值最小的边，并将
+      集合V-U中最小的边的端点加入U中，然后再次寻找。直至U == V */
       Network.prototype.mst_Prim = function () {
         // 用于计算结点间最小权值的数组
         // 索引对应于顶点数组，数组中的元素结构为: { vex: 与当前索引表示的顶点构成最小权值的边的顶点的索引, weight: 权值 }
@@ -29,19 +32,24 @@
 
         // 从第一个顶点开始，该点构成初始的集合U，U中的所有顶点的权值均为0
         weights[0] = { vexIndex: null, weight: 0 };
-        let lastMinimal = 0;
-        let remainingVex = this.vexes.length - 1;
+        let lastMinimal = 0; // 上一个与集合U中顶点权值最小的边，这个边的在集合V-U中的邻接点的索引
+        let remainingVex = this.vexes.length - 1; // V-U中剩余顶点个数，每找到一个最小权值的边，V-U中就减少一个顶点
 
+        /* 循环查找U与V-U中权值最小的边，并将V-U中的顶点加入U中
+        第一次查找时，将计算V-U中所有顶点与U中的唯一顶点的权值并找到最小权值
+        第二次查找时，由于上一次已经计算了V-U中与U中第一个顶点的权值，本次仅需要计算V-U中与U中第二个顶点
+        （也就是上一次查找时得到的顶点）的权值，并将权值与上一次的权值比对。如果比上一次权值小则保留本次权值，否则不做任何操作。 */
         while (remainingVex) {
+          /* 计算V-U与U中顶点的边的权值，并保留较小的权值 */
           for (let i = 1; i < weights.length; i++) {
             if (weights[i] == null) {
               weights[i] = { vexIndex: null, weight: Number.MAX_VALUE };
             }
 
-            if (weights[i].weight === 0) continue;
+            if (weights[i].weight === 0) continue; // 忽略已在集合U中的顶点
 
             const iWeight = this.edges[lastMinimal][i];
-            if (iWeight && weights[i].weight > iWeight) {
+            if (iWeight && weights[i].weight > iWeight) { // 对比上次权值，选择更小的权值
               weights[i].weight = iWeight;
               weights[i].vexIndex = lastMinimal;
             }
@@ -54,7 +62,12 @@
           remainingVex--;
         }
 
-        console.log('weights: ', weights);
+        const mstEdges = []; // 最小生成树所有的边
+        for (let i = 1; i < weights.length; i++) {
+          mstEdges.push([this.vexes[i], this.vexes[weights[i].vexIndex]]);
+        }
+
+        return mstEdges;
 
         function minimalWeight(weights) {
           let w;
@@ -92,7 +105,8 @@
       edges[5][3] = edges[3][5] = 2;
 
       const n0 = new Network(vexes, edges);
-      n0.mst_Prim();
+      const mstEdges = n0.mst_Prim();
+      console.log('mstEdges: ', mstEdges);
     </script>
   </body>
 </html>
