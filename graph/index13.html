@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>For Data Structure</h1>
+    无向图
+    <!-- prettier-ignore -->
+    <svg width="211" height="196" xmlns="http://www.w3.org/2000/svg">
+    <g>
+      <title>Layer 1</title>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="20" stroke-width="0" id="svg_5" y="18.00002" x="192.99997" stroke="#000" fill="#000000">A</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="20" id="svg_6" y="20.00002" x="61" stroke-width="0" stroke="#000" fill="#000000">B</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="20" id="svg_7" y="114" x="0.00001" stroke-width="0" stroke="#000" fill="#000000">C</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="20" id="svg_8" y="113" x="120.99998" stroke-width="0" stroke="#000" fill="#000000">D</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="20" id="svg_9" y="191.99998" x="64.99999" stroke-width="0" stroke="#000" fill="#000000">E</text>
+      <line stroke="#000" id="svg_10" y2="12.00002" x2="77.97183" y1="12.00002" x1="186.99997" fill="none"/>
+      <line id="svg_12" y2="92" x2="17.00001" y1="28.00002" x1="59" stroke="#000" fill="none"/>
+      <line stroke="#000" id="svg_13" y2="96.57143" x2="135.28566" y1="24.85716" x1="191.7143" fill="none"/>
+      <line stroke="#000" id="svg_14" y2="173.99999" x2="60.71428" y1="121" x1="10.71429" fill="none"/>
+      <line transform="rotate(2.48955 67.7143 107.571)" stroke="#000" id="svg_15" y2="105.57143" x2="113.71429" y1="109.57143" x1="21.71427" fill="none"/>
+      <line id="svg_16" y2="87.28568" x2="202.28571" y1="23.2857" x1="200.28571" stroke="#000" fill="none"/>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="20" id="svg_17" y="110.28568" x="197.99999" stroke-width="0" stroke="#000" fill="#000000">F</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="20" id="svg_18" y="190.5716" x="196.28568" stroke-width="0" stroke="#000" fill="#000000">G</text>
+      <line stroke="#000" id="svg_19" y2="170.00066" x2="203.99999" y1="119.00061" x1="202.99999" fill="none"/>
+    </g>
+    </svg>
+
+    <ul>
+      <li>计算连通分量的关节点</li>
+    </ul>
+
+    <script>
+      /* 计算连通分量的关节点 */
+
+      /* 邻接多重表存储结构 */
+      /* 顶点 */
+      function V(data) {
+        this.data = data;
+        this.firstEdge = null; // 顶点关联的第一条边
+      }
+      /* 边 */
+      function E(aVex, bVex) {
+        this.aVex = aVex; // 用vexs数组中的索引表示顶点
+        this.aNext = null; // aVex端的下一条边
+        this.bVex = bVex;
+        this.bNext = null;
+      }
+      /* 图 */
+      function G(vexs) {
+        this.vexs = vexs; // 一维数组保存所有的顶点
+      }
+      /* 根据顶点的值返回顶点的索引 */
+      G.prototype.pos = function (data) {
+        return this.vexs.findIndex(v => v.data === data);
+      };
+      /* 根据顶点的值返回顶点 */
+      G.prototype.vex = function (data) {
+        return this.vexs.find(v => v.data === data);
+      };
+      G.prototype.initEdges = function (edges) {
+        for (const e of edges) {
+          const { aVex: a, bVex: b } = e;
+          const vexA = this.vexs[a];
+          const vexB = this.vexs[b];
+
+          e.aNext = vexA.firstEdge;
+          vexA.firstEdge = e;
+          e.bNext = vexB.firstEdge;
+          vexB.firstEdge = e;
+        }
+      };
+      G.prototype.firstAdj = function (v) {
+        if (!v.firstEdge) return; // 如果该顶点度为0
+
+        const { aVex, bVex } = v.firstEdge;
+        const vIndex = this.vexs.indexOf(v);
+
+        if (aVex !== vIndex) return this.vexs[aVex]; // 顶点关联的边中，非当前的顶点为邻接点
+        if (bVex !== vIndex) return this.vexs[bVex];
+      };
+      /* 返回某一顶点的下一个邻接点，相对于'adj'的下一个邻接点 */
+      G.prototype.nextAdj = function (v, adj) {
+        const vIndex = this.vexs.indexOf(v);
+        const adjIndex = this.vexs.indexOf(adj);
+
+        let found = false;
+        // 遍历顶点的边链表
+        for (let e = v.firstEdge; e; ) {
+          const { aVex, bVex, aNext, bNext } = e;
+
+          // 如果边的aVex端是当前顶点v
+          if (aVex === vIndex) {
+            if (found) {
+              return this.vexs[bVex];
+            }
+            found = bVex === adjIndex;
+            e = e.aNext;
+            continue;
+          }
+
+          // 如果边的bVex端是当前顶点v
+          if (bVex === vIndex) {
+            if (found) {
+              return this.vexs[aVex];
+            }
+            found = aVex === adjIndex;
+            e = e.bNext;
+            continue;
+          }
+
+          throw new Error('error!');
+        }
+
+        // adj为v的最后一个邻接顶点
+        return null;
+      };
+
+      /* 计算该图的所有关节点，计算之前确保该图是连通图 */
+      /* 利用dfs过程中，顶点的访问次序计算 */
+      G.prototype.calcCutVertices = function () {
+        const visitedOrder = new Array(this.vexs.length); // 保存dfs遍历时各顶点的访问序号，从1开始，索引表示顶点
+        const cutv = []; // 保存所有的关节点的值
+        const minimalOrder = []; // 顶点所能邻接到的最先访问的顶点的访问序号，也就是最小的访问序号。索引表示顶点
+
+        let count = 0;
+        /* 遍历时选择的第一个顶点是dfs生成树的树根。
+        从树根的第一个邻接点开始遍历，如果可以遍历至全部的顶点，则表示树根下仅有一棵子树，
+        树根不是关节点；否则树根下有多颗子树，树根为其中的一个关节点 */
+        const root = this.vexs[0];
+        minimalOrder[0] = visitedOrder[0] = ++count;
+        const firstAdj = this.firstAdj(root);
+        dfs(this, firstAdj);
+
+        if (count === this.vexs.length) {
+          // 已通过第一邻接点遍历至所有顶点，树根不是关节点
+          return cutv;
+        }
+
+        /* count !== this.vexs.length
+        树根下还有其他子树，树根是一个关节点 */
+        cutv.push(root.data);
+
+        /* 遍历树根的所有其他邻接点，寻找关节点 */
+        let otherAdj = firstAdj;
+        while ((otherAdj = this.nextAdj(root, otherAdj))) {
+          dfs(this, otherAdj);
+        }
+
+        return cutv;
+
+        /* 从顶点v开始dfs遍历，并将遍历时计算的最小访问序号保存在minimalOrder中 */
+        function dfs(g, v) {
+          const vIndex = g.vexs.indexOf(v);
+
+          if (visitedOrder[vIndex]) return; // 本函数外部的非递归调用时可能会传入已遍历的顶点
+
+          let minOrder; // 临时保存当前可以邻接到的最小访问序号
+          minOrder = visitedOrder[vIndex] = ++count;
+
+          /* 遍历顶点v的所有邻接点，如果邻接点能访问到比当前更先访问的顶点（更小的访问序号），那么顶点v也可以
+          访问到那个顶点，更新当前的最小访问序号minOrder。
+          
+          访问到比当前更先访问的顶点有两种情况：
+          在dfs生成树中
+          1. 该顶点的子树中有一个结点与更先访问的顶点在图中是连通的
+          2. 该顶点本身与更先访问的顶点在图中是连通的 */
+          for (let adj = g.firstAdj(v); adj; adj = g.nextAdj(v, adj)) {
+            const adjIndex = g.vexs.indexOf(adj);
+
+            if (visitedOrder[adjIndex]) {
+              if (minOrder > minimalOrder[adjIndex]) {
+                // 上面的第二种情况
+                minOrder = minimalOrder[adjIndex];
+              }
+              continue;
+            }
+
+            dfs(g, adj);
+
+            if (minOrder > minimalOrder[adjIndex]) {
+              // 上面的第一种情况
+              minOrder = minimalOrder[adjIndex];
+            } else {
+              /* 当前的最小序号比邻接点的最小序号大，说明在dfs生成树中，作为顶点v子结点的adj结点在图中与更先访问的顶点不是连通的，
+              如果在图中删除顶点v，那么adj结点将被分割在图之外，形成一个连通分量。所以v是一个关节点 */
+              cutv.push(v.data);
+            }
+          }
+
+          // 在确定了所有邻接点的最小序号后，当前顶点v的最小序号为这些值中的最小值
+          minimalOrder[vIndex] = minOrder;
+        }
+      };
+
+      const vexes = [new V('A'), new V('B'), new V('C'), new V('D'), new V('E'), new V('F'), new V('G')];
+      // const vexes = [new V('A'), new V('B'), new V('C'), new V('D'), new V('E'), new V('F'), new V('G')];
+      const g = new G(vexes);
+      const edges = [
+        new E(g.pos('A'), g.pos('B')),
+        new E(g.pos('B'), g.pos('C')),
+        new E(g.pos('C'), g.pos('D')),
+        new E(g.pos('D'), g.pos('E')),
+        new E(g.pos('E'), g.pos('F')),
+        new E(g.pos('F'), g.pos('G')),
+      ];
+      // const edges = [
+      //   new E(g.pos('A'), g.pos('B')),
+      //   new E(g.pos('A'), g.pos('D')),
+      //   new E(g.pos('C'), g.pos('B')),
+      //   new E(g.pos('C'), g.pos('D')),
+      //   new E(g.pos('C'), g.pos('E')),
+      //   new E(g.pos('A'), g.pos('F')),
+      //   new E(g.pos('F'), g.pos('G')),
+      // ];
+      g.initEdges(edges);
+
+      const cutv = g.calcCutVertices();
+
+      console.log(cutv);
+    </script>
+  </body>
+</html>
