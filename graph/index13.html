@@ -202,21 +202,13 @@
       const g = new G(vexes);
       const edges = [
         new E(g.pos('A'), g.pos('B')),
-        new E(g.pos('B'), g.pos('C')),
+        new E(g.pos('A'), g.pos('D')),
+        new E(g.pos('C'), g.pos('B')),
         new E(g.pos('C'), g.pos('D')),
-        new E(g.pos('D'), g.pos('E')),
-        new E(g.pos('E'), g.pos('F')),
+        new E(g.pos('C'), g.pos('E')),
+        new E(g.pos('A'), g.pos('F')),
         new E(g.pos('F'), g.pos('G')),
       ];
-      // const edges = [
-      //   new E(g.pos('A'), g.pos('B')),
-      //   new E(g.pos('A'), g.pos('D')),
-      //   new E(g.pos('C'), g.pos('B')),
-      //   new E(g.pos('C'), g.pos('D')),
-      //   new E(g.pos('C'), g.pos('E')),
-      //   new E(g.pos('A'), g.pos('F')),
-      //   new E(g.pos('F'), g.pos('G')),
-      // ];
       g.initEdges(edges);
 
       const cutv = g.calcCutVertices();
