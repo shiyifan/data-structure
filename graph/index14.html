@@ -9,12 +9,133 @@
   <body>
     <h1>for data structure</h1>
 
+    有向无环图
+    <!-- prettier-ignore -->
+    <svg width="218" height="177" xmlns="http://www.w3.org/2000/svg">
+    <g>
+      <title>Layer 1</title>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="24" id="svg_3" y="71.6207" x="0" stroke-width="0" stroke="#000" fill="#000000">A</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="24" id="svg_4" y="21.37932" x="95.44827" stroke-width="0" stroke="#000" fill="#000000">B</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="24" id="svg_5" y="115.72415" x="99.51724" stroke-width="0" stroke="#000" fill="#000000">C</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="24" id="svg_6" y="75.96553" x="200.65517" stroke-width="0" stroke="#000" fill="#000000">D</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="24" id="svg_7" y="166.06897" x="19.10345" stroke-width="0" stroke="#000" fill="#000000">E</text>
+      <text xml:space="preserve" text-anchor="start" font-family="Noto Sans JP" font-size="24" id="svg_8" y="171.65518" x="188.89655" stroke-width="0" stroke="#000" fill="#000000">F</text>
+      <g transform="rotate(60.8774 54.5874 37.8342)" stroke="null" id="svg_31">
+      <line stroke="#000" id="svg_28" y2="74.55798" x2="54.05345" y1="1.11043" x1="54.05345" fill="none"/>
+      <line stroke="#000" id="svg_29" y2="17.13662" x2="49.03856" y1="1.32681" x1="54.03856" fill="none"/>
+      <line stroke="#000" id="svg_30" y2="15.69937" x2="60.13621" y1="1.32681" x1="54.13621" fill="none"/>
+      </g>
+      <g transform="rotate(70.007 158.791 89.4941)" stroke="null" id="svg_49">
+      <line stroke="#000" id="svg_46" y2="126.65244" x2="158.25727" y1="52.33568" x1="158.25727" fill="none"/>
+      <line stroke="#000" id="svg_47" y2="68.55154" x2="153.24239" y1="52.55463" x1="158.24239" fill="none"/>
+      <line stroke="#000" id="svg_48" y2="67.09727" x2="164.34004" y1="52.55463" x1="158.34004" fill="none"/>
+      </g>
+      <g transform="rotate(-16.0169 153.535 41.6878)" stroke="null" id="svg_53">
+      <line stroke="#000" id="svg_50" y2="10.11618" x2="124.85134" y1="73.25936" x1="182.21913" fill="none"/>
+      <line stroke="#000" id="svg_51" y2="54.93242" x2="173.41373" y1="73.05983" x1="182.06114" fill="none"/>
+      <line stroke="#000" id="svg_52" y2="66.23502" x2="166.32141" y1="73.1484" x1="181.98883" fill="none"/>
+      </g>
+      <g transform="rotate(113.057 58.7253 88.179)" stroke="null" id="svg_57">
+      <line stroke="#000" id="svg_54" y2="124.90281" x2="58.19138" y1="51.45526" x1="58.19138" fill="none"/>
+      <line stroke="#000" id="svg_55" y2="67.48145" x2="53.17649" y1="51.67164" x1="58.17649" fill="none"/>
+      <line stroke="#000" id="svg_56" y2="66.0442" x2="64.27415" y1="51.67164" x1="58.27415" fill="none"/>
+      </g>
+      <g transform="rotate(58.8397 67.6908 137.145)" stroke="null" id="svg_61">
+      <line stroke="#000" id="svg_58" y2="173.86832" x2="67.1569" y1="100.42077" x1="67.1569" fill="none"/>
+      <line stroke="#000" id="svg_59" y2="116.44697" x2="62.14201" y1="100.63716" x1="67.14201" fill="none"/>
+      <line stroke="#000" id="svg_60" y2="115.00971" x2="73.23966" y1="100.63716" x1="67.23966" fill="none"/>
+      </g>
+      <g transform="rotate(124.618 151.139 134.386)" stroke="null" id="svg_65">
+      <line stroke="#000" id="svg_62" y2="171.1097" x2="150.60517" y1="97.66215" x1="150.60517" fill="none"/>
+      <line stroke="#000" id="svg_63" y2="113.68835" x2="145.59028" y1="97.87853" x1="150.59028" fill="none"/>
+      <line stroke="#000" id="svg_64" y2="112.25109" x2="156.68793" y1="97.87853" x1="150.68793" fill="none"/>
+      </g>
+    </g>
+
+    </svg>
+
     <ul>
       <li>有向无环图的拓扑排序</li>
     </ul>
 
     <script>
-      
+      /* 有向无环图的拓扑排序 */
+
+      /* 以邻接表表示有向图 */
+      function ALGraph(vertices) {
+        this.vertices = vertices; // 一维数组保存所有的顶点
+      }
+      /* 根据弧尾（from）弧头（to）添加一条边 */
+      ALGraph.prototype.addEdge = function (from, to) {
+        const fromIndex = this.vertices.findIndex(v => v.data === from);
+        const toIndex = this.vertices.findIndex(v => v.data === to);
+
+        const al = new ALVertex(toIndex);
+        al.next = this.vertices[fromIndex].firstAdj;
+        this.vertices[fromIndex].firstAdj = al;
+
+        return this;
+      };
+      /* 返回拓扑排序序列 */
+      ALGraph.prototype.topoSort = function () {
+        const inDegree = calcInDegree.call(this);
+        const zero = []; // 保存所有0入度的顶点索引
+        let topoCount = 0; // 所有已排序的顶点个数
+
+        inDegree.forEach((d, index) => d === 0 && zero.push(index));
+
+        /* 从入度为0的顶点开始拓扑排序 */
+        let sequence = '';
+        while (zero.length !== 0) {
+          const zeroV = this.vertices[zero.shift()];
+          sequence += zeroV.data + ' ';
+
+          for (let adj = zeroV.firstAdj; adj; adj = adj.next) {
+            // 将所有邻接点的入度-1,并将入度为0的添加至'zero'数组中
+            --inDegree[adj.vIndex] === 0 && zero.push(adj.vIndex);
+          }
+
+          topoCount++;
+        }
+
+        if (topoCount !== this.vertices.length) {
+          // 有向图中存在环
+          throw new Error('there may be a circle in the graph!');
+        }
+
+        return sequence;
+
+        /* 计算所有顶点的入度 */
+        function calcInDegree() {
+          const degree = new Array(this.vertices.length); // 以索引表示顶点，值表示顶点的入度
+          degree.fill(0);
+
+          for (const v of this.vertices) {
+            for (let adj = v.firstAdj; adj; adj = adj.next) {
+              degree[adj.vIndex]++;
+            }
+          }
+
+          return degree;
+        }
+      };
+      /* 顶点 */
+      function Vertex(data, firstAdj) {
+        this.data = data;
+        this.firstAdj = firstAdj; // 第一个出度邻接点，相当于头指针
+      }
+      /* 顶点的出度邻接点，某一顶点的邻接点组成一个链表 */
+      function ALVertex(vIndex, next) {
+        this.vIndex = vIndex;
+        this.next = next;
+      }
+
+      const vert = [new Vertex('A'), new Vertex('B'), new Vertex('C'), new Vertex('D'), new Vertex('E'), new Vertex('F')];
+      const g = new ALGraph(vert);
+      g.addEdge('A', 'B').addEdge('B', 'D').addEdge('A', 'C').addEdge('C', 'D').addEdge('E', 'C').addEdge('C', 'F');
+
+      const topoSort = g.topoSort();
+      console.log('topo sort: ', topoSort);
     </script>
   </body>
 </html>
