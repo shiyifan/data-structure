@@ -9,7 +9,7 @@
   <body>
     <h1>for data structure</h1>
 
-    有向无环图
+    有向无环图(AOV)
     <!-- prettier-ignore -->
     <svg width="218" height="177" xmlns="http://www.w3.org/2000/svg">
     <g>
@@ -64,7 +64,8 @@
     </ul>
 
     <script>
-      /* 有向无环图的拓扑排序 */
+      /* 有向无环图(AOV, Activities On Vertext)的拓扑排序 */
+      /* 顶点表示活动，边表示活动间的优先关系 */
 
       /* 以邻接表表示有向图 */
       function ALGraph(vertices) {
@@ -130,8 +131,9 @@
         this.firstAdj = firstAdj; // 第一个出度邻接点，相当于头指针
       }
       /* 顶点的出度邻接点，某一顶点的邻接点组成一个链表 */
-      function ALVertex(vIndex, next) {
+      function ALVertex(vIndex, next, weight) {
         this.vIndex = vIndex;
+        this.weight = weight;
         this.next = next;
       }
 
@@ -141,6 +143,13 @@
 
       const topoSort = g.topoSort();
       console.log('topo sort: ', topoSort);
+    </script>
+
+    <script>
+      /* 有向无环图(AOE, Activities On Edge)的关键路径 */
+      /* 采用上面的邻接表存储结构，顶点表示事件，边表示活动，边上的权值表示活动所需时长 */
+
+      
     </script>
   </body>
 </html>
