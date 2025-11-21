@@ -158,11 +158,12 @@
         this.vertices = vertices; // 一维数组保存所有的顶点
       }
       /* 根据弧尾（from）弧头（to）添加一条边 */
-      ALGraph.prototype.addEdge = function (from, to) {
+      ALGraph.prototype.addEdge = function (from, to, weight) {
         const fromIndex = this.vertices.findIndex(v => v.data === from);
         const toIndex = this.vertices.findIndex(v => v.data === to);
 
         const al = new ALVertex(toIndex);
+        al.weight = weight;
         al.next = this.vertices[fromIndex].firstAdj;
         this.vertices[fromIndex].firstAdj = al;
 
@@ -170,7 +171,7 @@
       };
       /* 返回拓扑排序序列 */
       ALGraph.prototype.topoSort = function () {
-        const inDegree = calcInDegree.call(this);
+        const inDegree = this.calcInDegree();
         const zero = []; // 保存所有0入度的顶点索引
         let topoCount = 0; // 所有已排序的顶点个数
 
@@ -196,20 +197,20 @@
         }
 
         return sequence;
+      };
 
-        /* 计算所有顶点的入度 */
-        function calcInDegree() {
-          const degree = new Array(this.vertices.length); // 以索引表示顶点，值表示顶点的入度
-          degree.fill(0);
+      /* 计算所有顶点的入度 */
+      ALGraph.prototype.calcInDegree = function () {
+        const degree = new Array(this.vertices.length); // 以索引表示顶点，值表示顶点的入度
+        degree.fill(0);
 
-          for (const v of this.vertices) {
-            for (let adj = v.firstAdj; adj; adj = adj.next) {
-              degree[adj.vIndex]++;
-            }
+        for (const v of this.vertices) {
+          for (let adj = v.firstAdj; adj; adj = adj.next) {
+            degree[adj.vIndex]++;
           }
-
-          return degree;
         }
+
+        return degree;
       };
       /* 顶点 */
       function Vertex(data, firstAdj) {
@@ -219,7 +220,7 @@
       /* 顶点的出度邻接点，某一顶点的邻接点组成一个链表 */
       function ALVertex(vIndex, next, weight) {
         this.vIndex = vIndex;
-        this.weight = weight;
+        this.weight = weight; // 与邻接点向关联的那条弧的权重，可用于计算关键路径
         this.next = next;
       }
 
@@ -234,6 +235,104 @@
     <script>
       /* 有向无环图(AOE, Activities On Edge)的关键路径 */
       /* 采用上面的邻接表存储结构，顶点表示事件，边表示活动，边上的权值表示活动所需时长 */
+
+      /* 计算有向无环图(AOE)中的所有关键活动，该图中仅有一个入度为0的点和出度为0的点 */
+      ALGraph.prototype.criticalActivities = function () {
+        const inDegree = this.calcInDegree();
+        const zero = []; // 保存入度为0的顶点的索引
+        inDegree.forEach((d, i) => d === 0 && zero.push(i)); // 一般情况下，AOE网仅有一个入度为0的顶点
+
+        const earliest = new Array(this.vertices.length); // 各个顶点最早开始的时间
+        earliest.fill(0); // 所有最早开始时间初始设为0,另外起点的最早开始时间为0
+        const latest = new Array(this.vertices.length); // 各个顶点的最迟开始的时间
+
+        const stack = []; // 弹栈时为逆拓扑排序的顶点序列
+
+        // 拓扑排序的过程中计算各顶点的最早开始时间
+        while (zero.length !== 0) {
+          const vIndex = zero.shift();
+          const v = this.vertices[vIndex];
+          const vEarly = earliest[vIndex];
+          stack.push(vIndex);
+
+          // 已知顶点的最早开始时间，计算该顶点各个(弧头指向的)邻接点的最早开始时间
+          for (let adj = v.firstAdj; adj; adj = adj.next) {
+            const adjIndex = adj.vIndex;
+
+            if (earliest[adjIndex] < vEarly + adj.weight) {
+              // 邻接点的最早开始时间取直接前驱顶点与弧权重之和的最大值
+              earliest[adjIndex] = vEarly + adj.weight;
+            }
+
+            --inDegree[adjIndex] === 0 && zero.push(adjIndex);
+          }
+        }
+
+        // 逆拓扑排序的过程中计算各顶点的最晚开始时间
+        const lastIndex = stack.pop();
+        latest[lastIndex] = earliest[lastIndex]; // 拓扑排序最后一个顶点的最晚开始时间 = 最早开始时间
+        while (stack.length !== 0) {
+          const vIndex = stack.pop();
+          const v = this.vertices[vIndex];
+          const vLate = latest[vIndex];
+
+          // 已知顶点的最晚开始时间，计算该顶点各个(弧尾指向的)邻接点的最晚开始时间
+          for (let adj = v.firstAdj; adj; adj = adj.next) {
+            const adjIndex = adj.vIndex;
+
+            if (vLate == null || vLate > latest[adjIndex] - adj.weight) {
+              // 顶点的最晚开始时间取后继顶点与弧权重之差的最小值
+              latest[vIndex] = latest[adjIndex] - adj.weight;
+            }
+          }
+        }
+
+        // 计算所有弧的最早开始时间与最晚开始时间
+        const acti = [];
+        const allActi = [];
+        for (let i = 0; i < this.vertices.length; i++) {
+          const v = this.vertices[i];
+
+          for (let adj = v.firstAdj; adj; adj = adj.next) {
+            const adjV = this.vertices[adj.vIndex];
+            const arcEarliest = earliest[i]; // 弧的最早开始时间等于弧尾顶点的最早开始时间
+            const arcLatest = latest[adj.vIndex] - adj.weight; // 弧的最晚开始时间等于弧头顶点的最晚开始时间 - 弧的权重
+
+            allActi.push(`${v.data} - ${adjV.data}, ${arcLatest - arcEarliest}`);
+            arcEarliest === arcLatest && acti.push(`${v.data} - ${adjV.data}, ${arcEarliest}`);
+          }
+        }
+
+        console.log('all acti: ', allActi);
+        return acti;
+      };
+
+      const vex = [
+        new Vertex('A'),
+        new Vertex('B'),
+        new Vertex('C'),
+        new Vertex('D'),
+        new Vertex('E'),
+        new Vertex('F'),
+        new Vertex('G'),
+        new Vertex('H'),
+        new Vertex('I'),
+      ];
+      const g1 = new ALGraph(vex);
+      g1.addEdge('A', 'B', 6)
+        .addEdge('A', 'D', 4)
+        .addEdge('A', 'C', 5)
+        .addEdge('B', 'E', 1)
+        .addEdge('D', 'E', 1)
+        .addEdge('C', 'G', 2)
+        .addEdge('E', 'F', 9)
+        .addEdge('E', 'H', 7)
+        .addEdge('G', 'H', 4)
+        .addEdge('F', 'I', 1)
+        .addEdge('H', 'I', 4);
+
+      const activities = g1.criticalActivities();
+      console.log('critical path: ', activities);
     </script>
   </body>
 </html>
