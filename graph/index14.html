@@ -274,7 +274,7 @@
         while (stack.length !== 0) {
           const vIndex = stack.pop();
           const v = this.vertices[vIndex];
-          const vLate = latest[vIndex];
+          let vLate = latest[vIndex];
 
           // 已知顶点的最晚开始时间，计算该顶点各个(弧尾指向的)邻接点的最晚开始时间
           for (let adj = v.firstAdj; adj; adj = adj.next) {
@@ -282,9 +282,10 @@
 
             if (vLate == null || vLate > latest[adjIndex] - adj.weight) {
               // 顶点的最晚开始时间取后继顶点与弧权重之差的最小值
-              latest[vIndex] = latest[adjIndex] - adj.weight;
+              vLate = latest[adjIndex] - adj.weight;
             }
           }
+          latest[vIndex] = vLate;
         }
 
         // 计算所有弧的最早开始时间与最晚开始时间
@@ -328,7 +329,7 @@
         .addEdge('E', 'F', 9)
         .addEdge('E', 'H', 7)
         .addEdge('G', 'H', 4)
-        .addEdge('F', 'I', 2)
+        .addEdge('F', 'I', 1)
         .addEdge('H', 'I', 4);
 
       const activities = g1.criticalActivities();
