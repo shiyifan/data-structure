@@ -17,10 +17,23 @@
       /* Dijkstra算法 */
 
       /* 用邻接矩阵表示有向图，矩阵中的数值表示边的权值 */
-      function MatG(vertices, edges) {
+      function MatG(vertices) {
         this.vertices = vertices;
-        this.edges = edges;
+
+        this.edges = new Array(this.vertices.length);
+        for (let i = 0; i < this.edges.length; i++) {
+          this.edges[i] = new Array(this.vertices.length);
+        }
       }
+      MatG.prototype.addEdge = function (from, to, weight) {
+        const fromIndex = this.vertices.findIndex(v => v.data === from);
+        const toIndex = this.vertices.findIndex(v => v.data === to);
+
+        this.edges[fromIndex][toIndex] = weight;
+        return this;
+      };
+
+      MatG.prototype.dijkstra = function (source) {};
       /* 顶点 */
       function V(data) {
         this.data = data;
