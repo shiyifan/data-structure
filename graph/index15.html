@@ -33,11 +33,95 @@
         return this;
       };
 
-      MatG.prototype.dijkstra = function (source) {};
+      /* 计算从'source'顶点到其余顶点的最短路径 */
+      MatG.prototype.dijkstra = function (source) {
+        const srcIndex = this.vertices.findIndex(v => v.data === source);
+
+        const dist = new Array(this.vertices.length); // 起始点source到各个顶点的距离，数组索引表示顶点
+        dist[srcIndex] = 0; // 起始点到自身的距离设为0
+        // 每个顶点的最短路径中，该顶点的前一个顶点的索引。数组索引与值均表示顶点
+        const prev = new Array(this.vertices.length);
+        const Q = []; // 所有待计算最短路径的顶点集，值为顶点的索引
+        this.vertices.forEach((_, i) => Q.push(i));
+
+        while (Q.length !== 0) {
+          /* 计算当前最短路径 */
+          let shortest, shIndex;
+          for (let i = 0; i < Q.length; i++) {
+            if (dist[Q[i]] == null) continue;
+
+            if (shortest == null || shortest > dist[Q[i]]) {
+              shortest = dist[Q[i]];
+              shIndex = Q[i];
+            }
+          }
+
+          if (shIndex == null) {
+            Q.splice(0, 1);
+            continue;
+          }
+
+          // 在Q中删除最短路径的顶点
+          Q.splice(
+            Q.findIndex(i => i === shIndex),
+            1
+          );
+
+          for (let i = 0; i < Q.length; i++) {
+            const a = shortest + this.edges[shIndex][Q[i]];
+
+            if (isNaN(a)) continue;
+
+            if (dist[Q[i]] == null || a < dist[Q[i]]) {
+              dist[Q[i]] = a;
+              prev[Q[i]] = shIndex;
+            }
+          }
+        }
+
+        /* 根据prev得到source与每个顶点之间的最短路径 */
+        const paths = {};
+        for (let i = 0; i < prev.length; i++) {
+          const iVex = this.vertices[i];
+
+          if (i === srcIndex) continue;
+
+          if (prev[i] == null) {
+            paths[iVex.data] = '(no path)';
+            continue;
+          }
+
+          const path = [i];
+          let p = i;
+          while ((p = prev[p]) !== srcIndex) {
+            path.unshift(p);
+          }
+          path.unshift(srcIndex);
+
+          const pathStr = path.map(p => this.vertices[p].data).join(',');
+          paths[iVex.data] = `(${dist[i]}) ${pathStr}`;
+        }
+
+        return paths;
+      };
       /* 顶点 */
       function V(data) {
         this.data = data;
       }
+
+      const vertices = [new V('V0'), new V('V1'), new V('V2'), new V('V3'), new V('V4'), new V('V5')];
+      const g0 = new MatG(vertices);
+      g0.addEdge('V0', 'V4', 30);
+      g0.addEdge('V0', 'V2', 10);
+      g0.addEdge('V0', 'V5', 100);
+      g0.addEdge('V1', 'V2', 5);
+      g0.addEdge('V2', 'V3', 50);
+      g0.addEdge('V3', 'V5', 10);
+      g0.addEdge('V4', 'V3', 20);
+      g0.addEdge('V4', 'V5', 60);
+
+      const paths = g0.dijkstra('V0');
+      console.log('shortest paths: ', paths);
     </script>
   </body>
 </html>
