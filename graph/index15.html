@@ -37,18 +37,19 @@
       MatG.prototype.dijkstra = function (source) {
         const srcIndex = this.vertices.findIndex(v => v.data === source);
 
-        const dist = new Array(this.vertices.length); // 起始点source到各个顶点的距离，数组索引表示顶点
+        // 起始点source到各个顶点的最短距离，'undefined'表示source与该顶点不连通.数组索引表示顶点
+        const dist = new Array(this.vertices.length);
         dist[srcIndex] = 0; // 起始点到自身的距离设为0
-        // 每个顶点的最短路径中，该顶点的前一个顶点的索引。数组索引与值均表示顶点
+        // 数组索引表示顶点，值表示source到该顶点的最短路径上，该顶点的前一个顶点（也就是路径上的倒数第二个顶点）
         const prev = new Array(this.vertices.length);
         const Q = []; // 所有待计算最短路径的顶点集，值为顶点的索引
         this.vertices.forEach((_, i) => Q.push(i));
 
         while (Q.length !== 0) {
-          /* 计算当前最短路径 */
-          let shortest, shIndex;
+          /* 计算当前dist中的最短路径，该路径的就是source到dist[shIndex]的最短路径 */
+          let shortest /* 最短路径长度 */, shIndex /* 最短路径的顶点在dist中的索引 */;
           for (let i = 0; i < Q.length; i++) {
-            if (dist[Q[i]] == null) continue;
+            if (dist[Q[i]] == null) continue; // 忽略不连通的顶点
 
             if (shortest == null || shortest > dist[Q[i]]) {
               shortest = dist[Q[i]];
@@ -57,24 +58,28 @@
           }
 
           if (shIndex == null) {
+            /* 没有最短路径表示source与Q中剩余顶点不连通，则依次删除这些顶点 */
             Q.splice(0, 1);
             continue;
           }
 
-          // 在Q中删除最短路径的顶点
+          // 已找到当前最短路径，在Q中删除该顶点
           Q.splice(
             Q.findIndex(i => i === shIndex),
             1
           );
 
+          /* 根据已找到最短路径的顶点，计算该顶点与其他邻接点的权值，再加上shortest，能得出source与这些邻接点的路径长度,
+          然后更新dist中邻接点的路径长度 */
           for (let i = 0; i < Q.length; i++) {
-            const a = shortest + this.edges[shIndex][Q[i]];
+            const a = shortest + this.edges[shIndex][Q[i]]; // a为source到邻接点的路径长度
 
             if (isNaN(a)) continue;
 
+            /* 选择与之前相比更短的路径长度 */
             if (dist[Q[i]] == null || a < dist[Q[i]]) {
               dist[Q[i]] = a;
-              prev[Q[i]] = shIndex;
+              prev[Q[i]] = shIndex; // 同时更新该邻接点的上一个点
             }
           }
         }
