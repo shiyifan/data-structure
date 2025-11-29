@@ -76,12 +76,11 @@
     </svg>
 
     <ul>
-      <li>最短路径算法(Dijkstra算法)</li>
+      <li>Dijkstra最短路径算法</li>
+      <li>Floyd最短路径算法</li>
     </ul>
 
     <script>
-      /* Dijkstra算法 */
-
       /* 用邻接矩阵表示有向图，矩阵中的数值表示边的权值 */
       function MatG(vertices) {
         this.vertices = vertices;
@@ -91,6 +90,7 @@
           this.edges[i] = new Array(this.vertices.length);
         }
       }
+      /* 添加一条边 */
       MatG.prototype.addEdge = function (from, to, weight) {
         const fromIndex = this.vertices.findIndex(v => v.data === from);
         const toIndex = this.vertices.findIndex(v => v.data === to);
@@ -98,6 +98,10 @@
         this.edges[fromIndex][toIndex] = weight;
         return this;
       };
+    </script>
+
+    <script>
+      /* Dijkstra算法 */
 
       /* 计算从'source'顶点到其余顶点的最短路径 */
       MatG.prototype.dijkstra = function (source) {
@@ -197,6 +201,40 @@
 
       const paths = g0.dijkstra('V0');
       console.log('shortest paths: ', paths);
+    </script>
+
+    <script>
+      /* Floyd算法 */
+      MatG.prototype.floyd = function (from, to) {
+        const fromIndex = this.vertices.findIndex(v => v.data === from);
+        const toIndex = this.vertices.findIndex(v => v.data === to);
+
+        return f(fromIndex, toIndex, this.edges, this.vertices.length - 1);
+
+        function f(from, to, edges, k) {
+          if (k === 0) return edges[from][to];
+
+          const lastK = f(from, to, edges, k - 1);
+          const from_k = f(from, k, edges, k - 1);
+          const k_to = f(k, to, edges, k - 1);
+          const from_to = from_k + k_to;
+
+          if (isNaN(lastK) && isNaN(from_to)) return NaN;
+
+          if (isNaN(lastK)) return from_to;
+
+          if (isNaN(from_to)) return lastK;
+
+          return from_to < lastK ? from_to : lastK;
+        }
+      };
+
+      const vertices2 = [new V('A'), new V('B'), new V('C')];
+      const g1 = new MatG(vertices2);
+      g1.addEdge('A', 'B', 5).addEdge('A', 'C', 1).addEdge('C', 'B', 1);
+
+      const pathLength = g0.floyd('V0', 'V5');
+      console.log('floyd: ', pathLength);
     </script>
   </body>
 </html>
