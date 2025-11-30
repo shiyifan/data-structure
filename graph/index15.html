@@ -181,14 +181,14 @@
           dist中保存的就是整个图中每对顶点间的最短路径长度 */
           for (let i = 0; i < vNum; i++) {
             for (let j = 0; j < vNum; j++) {
-              const ikj = dist[i][k] + dist[k][j]; // 计算[i->k]、[k->j]的路径长度之和
+              const ikj = dist[i][k] + dist[k][j]; // 计算i->k、k->j的路径长度之和
               const ij = dist[i][j]; // 当前的i->j的路径长度
 
               if (isNaN(ikj)) continue;
 
               if (ij == null || ij > ikj) {
                 dist[i][j] = ikj; // 更新为更短的路径长度
-                // 已找到更短的路径为[i->k->j]，因此该路径的倒数第二个顶点为prev[k][j]
+                // 已找到更短的路径为i->k->j，因此该路径的倒数第二个顶点为prev[k][j]
                 prev[i][j] = prev[k][j];
               }
             }
