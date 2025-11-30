@@ -137,7 +137,7 @@
       g0.addEdge('V4', 'V5', 60);
 
       const paths = g0.dijkstra('V0');
-      console.log('shortest paths: ', paths);
+      console.log('dijkstra, V0:', paths);
     </script>
 
     <script>
@@ -145,33 +145,68 @@
       MatG.prototype.floyd = function (from, to) {
         const fromIndex = this.vertices.findIndex(v => v.data === from);
         const toIndex = this.vertices.findIndex(v => v.data === to);
+        const vNum = this.vertices.length;
 
-        return f(fromIndex, toIndex, this.edges, this.vertices.length - 1);
+        // 二维数组保存每对顶点之间的最短路径长度，数组索引表示顶点
+        const dist = new Array(vNum);
 
-        function f(from, to, edges, k) {
-          if (k === 0) return edges[from][to];
+        /* prev[a][b]表示路径a->b上倒数第二个顶点(即b的前一个顶点)，用索引表示。数组索引表示顶点。
+        与dijkstra中的prev变量类似，可以依次向前寻找到得到完整的逆向的最短路径，
+        例如：prev[a][b], prev[a][prev[a][b]], prev[a][prev[a][prev[a][b]]]... */
+        const prev = new Array(vNum);
 
-          const lastK = f(from, to, edges, k - 1);
-          const from_k = f(from, k, edges, k - 1);
-          const k_to = f(k, to, edges, k - 1);
-          const from_to = from_k + k_to;
-
-          if (isNaN(lastK) && isNaN(from_to)) return NaN;
-
-          if (isNaN(lastK)) return from_to;
-
-          if (isNaN(from_to)) return lastK;
-
-          return from_to < lastK ? from_to : lastK;
+        for (let i = 0; i < this.vertices.length; i++) {
+          dist[i] = new Array(vNum);
+          prev[i] = new Array(vNum);
         }
+
+        /* 初始化dist中的值为图中弧的权重，而prev为弧的第一个顶点 */
+        for (let i = 0; i < vNum; i++) {
+          for (let j = 0; j < vNum; j++) {
+            if (!this.edges[i][j]) continue;
+
+            dist[i][j] = this.edges[i][j];
+            prev[i][j] = i; // i->j的弧中，j前面的顶点为i
+          }
+        }
+        /* 同一个点的距离设为0,同一个点的最短路径上的倒数第二个顶点设为该点 */
+        for (let i = 0; i < vNum; i++) {
+          dist[i][i] = 0;
+          prev[i][i] = i;
+        }
+
+        for (let k = 0; k < vNum; k++) {
+          /* 开始计算图中每对顶点间，在当前k值下的最短路径。
+          每次循环过后，dist中的值均被更新为最短路径长度，因此，所有的k值遍历完成后，
+          dist中保存的就是整个图中每对顶点间的最短路径长度 */
+          for (let i = 0; i < vNum; i++) {
+            for (let j = 0; j < vNum; j++) {
+              const ikj = dist[i][k] + dist[k][j]; // 计算[i->k]、[k->j]的路径长度之和
+              const ij = dist[i][j]; // 当前的i->j的路径长度
+
+              if (isNaN(ikj)) continue;
+
+              if (ij == null || ij > ikj) {
+                dist[i][j] = ikj; // 更新为更短的路径长度
+                // 已找到更短的路径为[i->k->j]，因此该路径的倒数第二个顶点为prev[k][j]
+                prev[i][j] = prev[k][j];
+              }
+            }
+          }
+        }
+
+        let path = [];
+        let p = toIndex;
+        while ((p = prev[fromIndex][p]) !== fromIndex) {
+          path.unshift(this.vertices[p].data);
+        }
+        path.unshift(this.vertices[p].data);
+
+        return { length: dist[fromIndex][toIndex], path: path.join(',') };
       };
 
-      const vertices2 = [new V('A'), new V('B'), new V('C')];
-      const g1 = new MatG(vertices2);
-      g1.addEdge('A', 'B', 5).addEdge('A', 'C', 1).addEdge('C', 'B', 1);
-
-      const pathLength = g0.floyd('V0', 'V5');
-      console.log('floyd: ', pathLength);
+      const path = g0.floyd('V0', 'V5');
+      console.log('floyd, V0->V5: ', path);
     </script>
   </body>
 </html>
