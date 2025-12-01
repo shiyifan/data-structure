@@ -22,6 +22,7 @@
       console.log('powerlist: ', powerList);
 
       // 求解一个集合的幂集，即该集合所有子集构成的集合
+      /* i: 当前取舍的元素索引, list: 集合, temp: 临时变量，powerResult: 最终所有子集构成的集合 */
       function powerSet(i, list, temp, powerResult) {
         if (i >= list.length) {
           powerResult.push(temp);
@@ -30,6 +31,11 @@
 
         powerSet(i + 1, list, [list[i], ...temp], powerResult); // 取当前元素加入集合中
         powerSet(i + 1, list, [...temp], powerResult); // 舍弃当前元素
+      }
+
+      /* 求解一个集合的幂集，非递归方式 */
+      function powerSet_noRecursive(list) {
+        
       }
 
       console.log('fact: ', fact(10));
