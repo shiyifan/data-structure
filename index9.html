@@ -34,7 +34,7 @@
         powerSet(i + 1, list, [...temp], powerResult); // 舍弃当前元素
       }
 
-      /* 求解一个集合的幂集，参照上面递归函数编写的非递归函数 */
+      /* 求解一个集合的幂集，参照上面递归函数'powerSet'编写的非递归函数 */
       function powerSet_noRec(list) {
         const stack = [];
         const powerSet = [];
@@ -42,7 +42,7 @@
         stack.push({ current: 0, temp: [] });
 
         while (stack.length !== 0) {
-          const { current, temp, selected } = stack.at(-1);
+          const { current, temp} = stack.at(-1);
 
           if (current >= list.length) {
             powerSet.push(temp);
