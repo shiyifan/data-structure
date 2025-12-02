@@ -36,22 +36,34 @@
 
       /* 求解一个集合的幂集，参照上面递归函数'powerSet'编写的非递归函数 */
       function powerSet_noRec(list) {
-        const stack = [];
-        const powerSet = [];
+        /* 递归函数中，函数的末尾有两个连续的递归调用：'取'函数调用和'舍'函数调用。
+        由于先递归调用取函数，再调用舍函数，因此一定是先重复地调用取函数，然后取函数返回，再调用依次舍函数，然后再重复地调用取函数，
+        然后取函数返回....重复上述过程。
+        因此调用栈中先重复地压栈取函数参数，然后弹栈。然后再压栈舍函数参数，然再次重复地压栈取函数参数、弹栈...按此顺序重复下去 */
 
-        stack.push({ current: 0, temp: [] });
+        const stack = []; // 调用栈
+        const powerSet = []; // 幂集，元素为所有的子集
+
+        /* 模拟'powerSet'的首次调用 */
+        stack.push({
+          current: 0 /* 需要决定是否取舍的元素的索引 */,
+          temp: [] /* 保存每次取舍的结果 */,
+        });
 
         while (stack.length !== 0) {
-          const { current, temp} = stack.at(-1);
+          const { current, temp } = stack.at(-1);
 
           if (current >= list.length) {
+            /* 全部元素均已完成取舍，保存结果 */
             powerSet.push(temp);
-            stack.pop();
+            stack.pop(); // 弹栈，相当于powerSet递归调用结束
 
             if (stack.length === 0) {
               break;
             }
 
+            /* 由于在连续两个取函数与舍函数调用之后没有任何其他操作并且当前函数直接返回，所以此处直接将
+            当前函数栈弹出，并压入当前函数的舍函数，这样，当舍函数被弹出后，栈顶即是当前函数的上一层调用 */
             const { current: lastCurrent, temp: lastTemp } = stack.pop();
             stack.push({ current: lastCurrent + 1, temp: [...lastTemp] });
             continue;
