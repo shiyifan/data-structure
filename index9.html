@@ -15,11 +15,12 @@
     </ul>
 
     <script>
-      const listA = [1, 2, 3, 4];
+      const listA = [1, 2, 3];
 
       const powerList = [];
       powerSet(0, listA, [], powerList);
       console.log('powerlist: ', powerList);
+      console.log('powerList(no recursive): ', powerSet_noRec(listA));
 
       // 求解一个集合的幂集，即该集合所有子集构成的集合
       /* i: 当前取舍的元素索引, list: 集合, temp: 临时变量，powerResult: 最终所有子集构成的集合 */
@@ -34,8 +35,32 @@
       }
 
       /* 求解一个集合的幂集，非递归方式 */
-      function powerSet_noRecursive(list) {
-        
+      function powerSet_noRec(list) {
+        const stack = [];
+        const powerSet = [];
+
+        stack.push({ current: 0, temp: [] });
+
+        while (stack.length !== 0) {
+          const { current, temp, selected } = stack.at(-1);
+
+          if (current >= list.length) {
+            powerSet.push(temp);
+            stack.pop();
+
+            if (stack.length === 0) {
+              break;
+            }
+
+            const { current: lastCurrent, temp: lastTemp } = stack.pop();
+            stack.push({ current: lastCurrent + 1, temp: [...lastTemp] });
+            continue;
+          }
+
+          stack.push({ current: current + 1, temp: [list[current], ...temp] });
+        }
+
+        return powerSet;
       }
 
       console.log('fact: ', fact(10));
