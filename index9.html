@@ -118,8 +118,12 @@
       console.log(notAttacks.join('; '));
 
       const notAttack2 = drop_noRec_Q(4); // 4皇后问题
-      console.log('queens norec: ', notAttack2.length);
+      console.log('queens norec(Q): ', notAttack2.length);
       console.log(notAttack2.join('; '));
+
+      const notAttack3 = drop_noRec_S(4);
+      console.log('queens norec(S): ', notAttack3.length);
+      console.log(notAttack3.join('; '));
 
       /* 在当前行放置棋子 */
       /* queens: 当前的棋盘，row：当前行，n：全部皇后个数，notAttacks：不会相互攻击的棋盘 */
@@ -141,15 +145,46 @@
         }
       }
 
+      /* N皇后问题的非递归函数，利用栈实现 */
       function drop_noRec_S(n /* 皇后个数 */) {
         const notAttacks = [];
         const stack = [];
 
-        stack.push({ queens: [], row: 0 });
+        stack.push({ queens: [], row: 0, col: 0 });
 
         while (stack.length !== 0) {
+          const top = stack.at(-1);
+          const { queens, row } = top;
 
+          if (row >= n) {
+            notAttacks.push(queens);
+            stack.pop();
+            continue;
+          }
+
+          if (top.col >= n) {
+            stack.pop();
+            continue;
+          }
+
+          let newChess;
+          while (top.col < n) {
+            newChess = [...queens, top.col++];
+
+            if (!canAttack(newChess)) break;
+
+            newChess = null;
+          }
+          if (!newChess) {
+            /* 未能找到合适的放置位置 */
+            stack.pop();
+            continue;
+          }
+
+          stack.push({ queens: newChess, row: row + 1, col: 0 });
         }
+
+        return notAttacks;
       }
 
       /* N皇后问题的非递归函数，利用队列实现 */
