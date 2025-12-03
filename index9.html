@@ -150,23 +150,26 @@
         const notAttacks = [];
         const stack = [];
 
-        stack.push({ queens: [], row: 0, col: 0 });
+        stack.push({ queens: [], row: 0 /* 当前要放置皇后的行 */, col: 0 /* 当前行要试探的列 */ });
 
         while (stack.length !== 0) {
           const top = stack.at(-1);
           const { queens, row } = top;
 
           if (row >= n) {
+            /* 如果当前行超出棋盘，则表示所有的棋子均已放置，当前的棋盘是一个结果 */
             notAttacks.push(queens);
             stack.pop();
             continue;
           }
 
           if (top.col >= n) {
+            /* 如果当前行已在所有的列上试探了皇后的位置，那么退回至上一行 */
             stack.pop();
             continue;
           }
 
+          /* 在当前列以及后面的列，为当前行寻找一个合适的位置 */
           let newChess;
           while (top.col < n) {
             newChess = [...queens, top.col++];
@@ -181,6 +184,7 @@
             continue;
           }
 
+          /* 当前行的位置已找到则直接探索下一行的位置 */
           stack.push({ queens: newChess, row: row + 1, col: 0 });
         }
 
