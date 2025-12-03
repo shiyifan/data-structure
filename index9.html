@@ -20,7 +20,8 @@
       const powerList = [];
       powerSet(0, listA, [], powerList);
       console.log('powerlist: ', powerList);
-      console.log('powerList(no recursive): ', powerSet_noRec(listA));
+      console.log('powerList(no recursive, Stack): ', powerSet_noRec_S(listA));
+      console.log('powerList(no rec, Q): ', powerSet_noRec_Q(listA));
 
       // 求解一个集合的幂集，即该集合所有子集构成的集合
       /* i: 当前取舍的元素索引, list: 集合, temp: 临时变量，powerResult: 最终所有子集构成的集合 */
@@ -34,8 +35,8 @@
         powerSet(i + 1, list, [...temp], powerResult); // 舍弃当前元素
       }
 
-      /* 求解一个集合的幂集，参照上面递归函数'powerSet'编写的非递归函数 */
-      function powerSet_noRec(list) {
+      /* 求解一个集合的幂集，参照上面递归函数'powerSet'编写的非递归函数，利用栈实现 */
+      function powerSet_noRec_S(list) {
         /* 递归函数中，函数的末尾有两个连续的递归调用：'取'函数调用和'舍'函数调用。
         由于先递归调用取函数，再调用舍函数，因此一定是先重复地调用取函数，然后取函数返回，再调用依次舍函数，然后再重复地调用取函数，
         然后取函数返回....重复上述过程。
@@ -75,6 +76,27 @@
         return powerSet;
       }
 
+      /* 求解一个集合的幂集，参照上面递归函数'powerSet'编写的非递归函数，利用队列实现 */
+      function powerSet_noRec_Q(list) {
+        const Q = [];
+        const powerSet = [];
+        Q.push({ temp: [], i: 0 });
+
+        while (Q.length !== 0) {
+          const { temp, i } = Q.shift();
+
+          if (i >= list.length) {
+            powerSet.push(temp);
+            continue;
+          }
+
+          Q.push({ temp: [...temp, list[i]], i: i + 1 });
+          Q.push({ temp: [...temp], i: i + 1 });
+        }
+
+        return powerSet;
+      }
+
       console.log('fact: ', fact(10));
 
       function fact(n) {
@@ -95,7 +117,7 @@
       console.log('queens: ', notAttacks.length);
       console.log(notAttacks.join('; '));
 
-      const notAttack2 = drop_noRec(4); // 4皇后问题
+      const notAttack2 = drop_noRec_Q(4); // 4皇后问题
       console.log('queens norec: ', notAttack2.length);
       console.log(notAttack2.join('; '));
 
@@ -120,9 +142,9 @@
       }
 
       /* N皇后问题的非递归函数，利用队列实现 */
-      function drop_noRec(n /* 皇后个数 */) {
+      function drop_noRec_Q(n /* 皇后个数 */) {
         const notAttacks = []; // 保存所有互不攻击的棋盘
-        const Q = [];
+        const Q = []; // 队列，保存所有可能的棋盘
 
         Q.push({ queens: [], row: 0 /* 当前放置皇后的所在行 */ });
 
