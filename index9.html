@@ -141,6 +141,17 @@
         }
       }
 
+      function drop_noRec_S(n /* 皇后个数 */) {
+        const notAttacks = [];
+        const stack = [];
+
+        stack.push({ queens: [], row: 0 });
+
+        while (stack.length !== 0) {
+
+        }
+      }
+
       /* N皇后问题的非递归函数，利用队列实现 */
       function drop_noRec_Q(n /* 皇后个数 */) {
         const notAttacks = []; // 保存所有互不攻击的棋盘
@@ -156,6 +167,7 @@
             continue;
           }
 
+          /* 将当前行棋子的所有可能放置的位置添加至队尾 */
           for (let i = 0; i < n; i++) {
             const newChess = [...queens, i];
 
