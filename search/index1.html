@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>For Data Structure</h1>
+
+    <ul>
+      <li>折半查找</li>
+    </ul>
+
+    <script>
+      const list = [1, 2, 14, 21, 22, 43];
+
+      console.log('binary search: ', binarySearch(list, 21));
+
+      /* 在list中以折半查找方式查找item */
+      function binarySearch(list, item) {
+        let low = 0;
+        let high = list.length - 1;
+
+        while (low <= high) {
+          const mid = Math.floor((high + low) / 2);
+
+          if (list[mid] === item) {
+            return mid;
+          }
+
+          if (list[mid] < item) {
+            low = mid + 1;
+            continue;
+          }
+          // list[mid] > item
+          high = mid - 1;
+        }
+
+        return -1;
+      }
+    </script>
+
+    <script>
+      const list2 = [2, 13, 15, 18, 21, 29];
+
+      const map = new Map();
+      const mapLength = new Map();
+      for (let i = 0; i < list2.length; i++) {
+        const [mid, n] = binarySearch_n(list2, list2[i]);
+        const [midLength, nLength] = binarySearch_n(list2, list2[i], true);
+
+        map.set(list2[i], `${mid}, ${n}`);
+        mapLength.set(list2[i], `${midLength}, ${nLength}`);
+      }
+
+      console.log('map: ', map);
+      console.log('mapLength: ', mapLength);
+
+      function binarySearch_n(list, item, useLength) {
+        let low = 0;
+        let high = useLength ? list.length : list.length - 1;
+        let mid;
+        let n = 0; // counter
+
+        while (low <= high) {
+          n++;
+          mid = Math.floor((high + low) / 2);
+
+          if (list[mid] === item) {
+            break;
+          }
+
+          if (list[mid] < item) {
+            low = mid + 1;
+            continue;
+          }
+          // list[mid] > item
+          high = mid - 1;
+        }
+
+        if (low <= high) return [mid, n];
+
+        return -1;
+      }
+    </script>
+  </body>
+</html>
