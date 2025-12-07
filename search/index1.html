@@ -49,27 +49,30 @@
       /* Fibonacci查找 */
 
       const a1 = [14, 17, 23, 27, 29, 34];
-
       console.log('fib search: ', fibonacciSearch(a1, 17));
 
       /* 按照Fibonacci数列分割数组查找元素，其中list是递增排列的数组 */
       function fibonacciSearch(list, item) {
-        let n = fibGreaterThan(list.length);
+        let fibIndex = fibGreaterThan(list.length);
 
+        // 分割数组后，可能不会在数组0索引开始查找，而从分割点 + fib数开始。该变量用于保存上一个分割点的位置
         let offset = -1;
-        while (n !== 0) {
-          const n1 = fibonacci(n - 1);
-          const k = Math.min(n1 + offset, list.length - 1);
+
+        while (fibIndex !== 0) {
+          // fibIndex前一个fib数，根据这个数分割list，分割后两段数组分别长fibonacci(fibIndex - 1), fibonacci(fibIndex - 2)
+          const lastFib = fibonacci(fibIndex - 1);
+
+          const k = Math.min(lastFib + offset, list.length - 1); // 避免数组越界，计算合适的分割点位置
 
           if (list[k] === item) return k;
 
           if (list[k] < item) {
             offset = k;
-            n = n - 2;
+            fibIndex = fibIndex - 2;
             continue;
           }
           // list[k] > item
-          n = n - 1;
+          fibIndex = fibIndex - 1;
         }
 
         return -1;
