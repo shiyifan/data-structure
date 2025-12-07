@@ -10,15 +10,18 @@
     <h1>For Data Structure</h1>
 
     <ul>
-      <li>折半查找</li>
+      <li>折半查找(Binary Search)</li>
+      <li>Fibonacci查找</li>
     </ul>
 
     <script>
+      /* 折半查找 */
+
       const list = [1, 2, 14, 21, 22, 43];
 
       console.log('binary search: ', binarySearch(list, 21));
 
-      /* 在list中以折半查找方式查找item */
+      /* 在list中以折半查找方式查找item，其中list为递增排列的数组 */
       function binarySearch(list, item) {
         let low = 0;
         let high = list.length - 1;
@@ -43,46 +46,58 @@
     </script>
 
     <script>
-      const list2 = [2, 13, 15, 18, 21, 29];
+      /* Fibonacci查找 */
 
-      const map = new Map();
-      const mapLength = new Map();
-      for (let i = 0; i < list2.length; i++) {
-        const [mid, n] = binarySearch_n(list2, list2[i]);
-        const [midLength, nLength] = binarySearch_n(list2, list2[i], true);
+      const a1 = [14, 17, 23, 27, 29, 34];
 
-        map.set(list2[i], `${mid}, ${n}`);
-        mapLength.set(list2[i], `${midLength}, ${nLength}`);
-      }
+      console.log('fib search: ', fibonacciSearch(a1, 17));
 
-      console.log('map: ', map);
-      console.log('mapLength: ', mapLength);
+      /* 按照Fibonacci数列分割数组查找元素，其中list是递增排列的数组 */
+      function fibonacciSearch(list, item) {
+        let n = minFibonacci(list.length);
 
-      function binarySearch_n(list, item, useLength) {
-        let low = 0;
-        let high = useLength ? list.length : list.length - 1;
-        let mid;
-        let n = 0; // counter
+        let offset = -1;
+        while (n !== 0) {
+          const n1 = fibonacci(n - 1);
+          const k = Math.min(n1 + offset, list.length - 1);
 
-        while (low <= high) {
-          n++;
-          mid = Math.floor((high + low) / 2);
+          if (list[k] === item) return k;
 
-          if (list[mid] === item) {
-            break;
-          }
-
-          if (list[mid] < item) {
-            low = mid + 1;
+          if (list[k] < item) {
+            offset = k;
+            n = n - 2;
             continue;
           }
-          // list[mid] > item
-          high = mid - 1;
+          // list[k] > item
+          n = n - 1;
         }
 
-        if (low <= high) return [mid, n];
-
         return -1;
+
+        /* 计算大于或等于n的最小Fibnacci数在数列中的索引 */
+        function minFibonacci(n) {
+          let i = 0; // fibonacci数的索引
+          let a; // fibonacci数
+
+          while ((a = fibonacci(i++)) < n);
+
+          return i - 1;
+        }
+
+        /* 计算索引为n的fibonacci数 */
+        function fibonacci(n) {
+          if (n === 0) return 0;
+          if (n === 1) return 1;
+
+          let a = 0;
+          let b = 1;
+          let c;
+          for (let i = 2; i <= n; i++) {
+            i % 2 === 0 ? (c = a = a + b) : (c = b = a + b);
+          }
+
+          return c;
+        }
       }
     </script>
   </body>
