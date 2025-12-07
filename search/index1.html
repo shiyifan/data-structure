@@ -51,7 +51,8 @@
       const a1 = [14, 17, 23, 27, 29, 34];
       console.log('fib search: ', fibonacciSearch(a1, 17));
 
-      /* 按照Fibonacci数列分割数组查找元素，其中list是递增排列的数组 */
+      /* 按照Fibonacci数列分割数组查找元素，其中list是递增排列的数组。
+      此方法分割数组时仅涉及加减法，在早期计算机上（除法耗时较长）性能会较好，不过在现代计算机上这个性能差异可以忽略不计 */
       function fibonacciSearch(list, item) {
         let fibIndex = fibGreaterThan(list.length);
 
@@ -66,15 +67,21 @@
 
           if (list[k] === item) return k;
 
+          /* item与分割点不相等，那么item应位于两段数组中，对两段数组再次按fibonacci数列分割查找 */
+
           if (list[k] < item) {
+            /* 此时item应位于"fibIndex - 2"那段数组中 */
             offset = k;
             fibIndex = fibIndex - 2;
             continue;
           }
+
+          /* 此时item应位于"fibIndex - 1"的那段数组中 */
           // list[k] > item
           fibIndex = fibIndex - 1;
         }
 
+        /* 分割后，item所在的数组长度为fibonacci(0)，表示未找到item */
         return -1;
 
         /* 计算大于或等于n的最小Fibnacci数在数列中的索引 */
