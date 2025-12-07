@@ -77,9 +77,10 @@
         /* 计算大于或等于n的最小Fibnacci数在数列中的索引 */
         function fibGreaterThan(n) {
           let i = 0; // fibonacci数的索引
-          let a; // fibonacci数
+          let f; // fibonacci数
 
-          while ((a = fibonacci(i++)) < n);
+          // 从索引0开始计算后续的fib数，找到第一个比n大的fib数
+          while ((f = fibonacci(i++)) < n);
 
           return i - 1;
         }
