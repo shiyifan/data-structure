@@ -54,7 +54,7 @@
 
       /* 按照Fibonacci数列分割数组查找元素，其中list是递增排列的数组 */
       function fibonacciSearch(list, item) {
-        let n = minFibonacci(list.length);
+        let n = fibGreaterThan(list.length);
 
         let offset = -1;
         while (n !== 0) {
@@ -75,7 +75,7 @@
         return -1;
 
         /* 计算大于或等于n的最小Fibnacci数在数列中的索引 */
-        function minFibonacci(n) {
+        function fibGreaterThan(n) {
           let i = 0; // fibonacci数的索引
           let a; // fibonacci数
 
@@ -84,7 +84,7 @@
           return i - 1;
         }
 
-        /* 计算索引为n的fibonacci数 */
+        /* 计算索引为n的fibonacci数，非递归 */
         function fibonacci(n) {
           if (n === 0) return 0;
           if (n === 1) return 1;
