@@ -104,10 +104,10 @@
 
         // p的左子树与右子树均不为空
         let pRight = p.left;
+        // 寻找p左子树最右侧的结点
         while (pRight.right) {
           pRight = pRight.right;
         }
-        // pRight为p左子树中最右侧的结点
         p === pp.left ? (pp.left = p.left) : (pp.right = p.left);
         pRight.right = p.right;
       };
