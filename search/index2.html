@@ -92,14 +92,36 @@
           return;
         }
 
-        /* p的左子树与右子树均不为空，此时可将p的左子树上移，并将p的右子树移动至p左子树最右侧结点的右子树 */
-        let pRight = p.left;
+        /* p的左子树与右子树均不为空 */
+        /* 方法一: 此时可将p的左子树上移，并将p的右子树移动至p左子树最右侧结点的右子树 */
+        let pRight = p.left; // p左子树的最右侧结点
         // 寻找p左子树最右侧的结点
         while (pRight.right) {
           pRight = pRight.right;
         }
-        p === pp.left ? (pp.left = p.left) : (pp.right = p.left);
+        if (!pp) {
+          /* p是根节点 */
+          this.root = p.left;
+        } else {
+          p === pp.left ? (pp.left = p.left) : (pp.right = p.left);
+        }
         pRight.right = p.right;
+
+        /* 方法二: 寻找p的左子树中最右侧结点pRight，然后将pRight的值赋值给p，然后将pRight的最子树
+        赋值给pRight父结点的右子树上 */
+        // let pRight = p.left; // p左子树的最右侧结点
+        // let ppRight; // pRight的父结点
+        // while (pRight.right) {
+        //   ppRight = pRight;
+        //   pRight = pRight.right;
+        // }
+        // if (ppRight) {
+        //   ppRight.right = pRight.left;
+        // } else {
+        //   /* p左子树的右子树为空，此时p的左子树应为pRight的左子树 */
+        //   p.left = pRight.left;
+        // }
+        // p.data = pRight.data; // 将最右结点的值赋值给p
       };
 
       /* 返回二叉排序按层遍历的序列，该序列不是标准的按层遍历的结果。不过
@@ -141,7 +163,7 @@
       };
 
       const t0 = new STree();
-      t0.search(8, 4, 10, 1, 3, 9, 7, 6);
+      t0.search(8, 4, 10, 1, 0, 9, 7, 6);
       console.log('seq: %s inOrder: %s', t0.levelOrder(), t0.inOrder());
 
       const deleted = 4;
