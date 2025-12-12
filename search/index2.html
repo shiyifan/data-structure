@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doc</title>
+  </head>
+  <body>
+    <h1>For Data Structure</h1>
+
+    <ul>
+      <li>二叉排序树</li>
+    </ul>
+
+    <script>
+      /* 二叉排序树结点 */
+      function STNode(data, left, right) {
+        this.data = data;
+        this.left = left;
+        this.right = right;
+      }
+      /* 二叉排序树 */
+      function STree(root) {
+        this.root = root;
+      }
+
+      /* 查找多个元素，如果查找失败则新增结点 */
+      STree.prototype.search = function (...input) {
+        for (const i of input) {
+          /* 当树根为空时，先实例化树根 */
+          if (this.root == null) {
+            this.root = new STNode(i);
+            continue;
+          }
+
+          let cur = this.root;
+          while (true) {
+            if (cur.data === i) break; // 找到该元素
+
+            if (cur.data > i) {
+              if (!cur.left) {
+                /* 树中不存在该元素，且比当前结点小，插入新结点作为左子树 */
+                cur.left = new STNode(i);
+                break;
+              }
+              /* 在左子树中继续向下查找 */
+              cur = cur.left;
+              continue;
+            }
+
+            // cur.data < i
+            if (!cur.right) {
+              /* 树中不存在该元素，且比当前结点大，插入新结点作为右子树 */
+              cur.right = new STNode(i);
+              break;
+            }
+            /* 在右子树中继续向下查找 */
+            cur = cur.right;
+          }
+        }
+      };
+
+      /* 删除二叉排序树中一个结点，删除后仍具有二叉排序树的特性，保证中序遍历的结果为一有序序列 */
+      STree.prototype.remove = function (deleted) {
+        
+      };
+
+      /* 返回二叉排序按层遍历的序列，该序列不是标准的按层遍历的结果。不过
+      可作为参数输入到'https://tree-graph-algorithm-visualizer.vercel.app/binarytree'中，显示该树的可视化图像 */
+      STree.prototype.levelOrder = function () {
+        const queue = [this.root];
+
+        let sequence = [];
+        while (queue.length !== 0) {
+          const node = queue.shift();
+
+          if (node) {
+            sequence.push(node.data);
+            queue.push(node.left, node.right);
+          } else {
+            sequence.push('null');
+          }
+        }
+
+        for (; sequence.at(-1) === 'null'; sequence.pop()); // 删除末尾的'null'直至第一个非'null'
+
+        return sequence.join(',');
+      };
+
+      /* 中序遍历 */
+      STree.prototype.inOrder = function () {
+        let seq = [];
+
+        /* 递归的中序遍历 */
+        (function _f(root, seq) {
+          if (!root) return;
+
+          _f(root.left, seq);
+          seq.push(root.data);
+          _f(root.right, seq);
+        })(this.root, seq);
+
+        return seq.join(',');
+      };
+
+      const t0 = new STree();
+      t0.search(1, 5, 3, 2, 4, 9, 10);
+
+      console.log('seq: %s inOrder: %s', t0.levelOrder(), t0.inOrder());
+    </script>
+  </body>
+</html>
