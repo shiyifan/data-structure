@@ -103,6 +103,7 @@
           /* p是根节点 */
           this.root = p.left;
         } else {
+          /* p不是根节点，则根据p作为pp的左右结点更新pp的左右子树指针 */
           p === pp.left ? (pp.left = p.left) : (pp.right = p.left);
         }
         pRight.right = p.right;
