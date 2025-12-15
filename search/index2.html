@@ -11,14 +11,28 @@
 
     <ul>
       <li>二叉排序树</li>
+      <li>平衡二叉树</li>
     </ul>
 
     <script>
+      console.log(
+        '%cvisualize tree: %s',
+        'color: #DC36F0; font-size: 1.25em',
+        'https://tree-graph-algorithm-visualizer.vercel.app/binarytree'
+      );
+    </script>
+
+    <script>
       /* 二叉排序树结点 */
-      function STNode(data, left, right) {
+      function STNode(data, left, right, bfactor) {
         this.data = data;
         this.left = left;
         this.right = right;
+
+        /* 平衡因子，即"左子树深度 - 右子树深度"，用于平衡二叉树
+        取值范围为: -1(右子树较深一层), 0(左右子树深度相同), 1(左子树较深一层)。
+        这三个表示已平衡的树的三种形态 */
+        this.bfactor = bfactor;
       }
       /* 二叉排序树 */
       function STree(root) {
@@ -170,6 +184,220 @@
       const deleted = 8;
       t0.remove(deleted);
       console.log('deleted: %i, seq: %s inOrder: %s', deleted, t0.levelOrder(), t0.inOrder());
+    </script>
+
+    <script>
+      /* 平衡二叉树 */
+
+      /* 查找多个元素，如果元素不存在则插入并根据需要平衡该二叉树 */
+      STree.prototype.balancedSearch = function (...keys) {
+        /* 平衡树的三种状态 */
+        const L_DEEPER = 1; // 左子树更深一层
+        const EQ_DEEP = 0; // 左右子树深度相同
+        const R_DEEPER = -1; // 右子树更深一层
+
+        const balance = _balance.bind(this);
+
+        for (const key of keys) {
+          if (!this.root) {
+            /* 树尚未实例化时 */
+            this.root = new STNode(key, null, null, EQ_DEEP); // 初始化结点时，该结点左右子树均为空，所以平衡因子为0
+            continue;
+          }
+
+          /* 在树中查找元素 */
+          let pNode = this.root;
+          let found = false;
+          const path = []; // 记录查找路径
+          while (pNode) {
+            if (key === pNode.data) {
+              found = true;
+              break;
+            }
+
+            if (key < pNode.data) {
+              path.push({ node: pNode, /* 是否继续在左子树上查找 */ nextLeft: true });
+              pNode = pNode.left;
+              continue;
+            }
+
+            path.push({ node: pNode, nextLeft: false });
+            pNode = pNode.right;
+          }
+
+          // 树中已存在该元素，继续查找下一个
+          if (found) continue;
+
+          // 树中不存在该元素，需要插入并按需平衡该树
+          const newNode = new STNode(key, null, null, EQ_DEEP);
+          const { node: lastNode } = path.at(-1);
+          // 插入该结点
+          key < lastNode.data ? (lastNode.left = newNode) : (lastNode.right = newNode);
+
+          while (path.length !== 0) {
+            /* 每次循环表示插入结点后，上一次循环内的树的深度增加，继续判断该树的上一层树深度是否增加。
+            如果某一层树的深度不变，那么该树的所有祖先树深度也不会改变，此时直接结束循环 */
+
+            const { node, nextLeft } = path.pop();
+
+            if (node.bfactor === EQ_DEEP) {
+              /* 如果插入前，结点的左右子树深度相同，那么插入后一定有一子树的深度较另一子树更深一层，但该树仍是平衡的。
+              此时该树的深度增加，可能会导致祖先树深度增加并失去平衡，需要继续判断路径中上一层的树是否平衡 */
+              node.bfactor = nextLeft ? L_DEEPER : R_DEEPER;
+              continue;
+            }
+
+            if (node.bfactor === L_DEEPER) {
+              /* 插入前，结点的左子树更深 */
+              if (nextLeft) {
+                /* 该树的左子树中插入了新的结点并且左子树的深度增加，此时左子树的深度导致该树不平衡，
+                需要将左子树的深度平衡至右子树上 */
+                balance(node, path.at(-1)?.node, true);
+              }
+              /* 左子树已被平衡或者在右子树上插入了结点，此时该树左右子树深度相同 */
+              node.bfactor = EQ_DEEP;
+
+              /* 如果该树已被平衡，那么平衡之后与插入结点之前的深度相同，不会影响祖先树的深度，无需继续判断上一层。
+              如果在该树的右子树上插入了结点，那么该树的深度不变，同样不会影响祖先树的深度 */
+              break;
+            }
+
+            // node.bfactor === R_DEEPER，插入前，右子树更深
+
+            if (!nextLeft) {
+              /* 该树的右子树上插入了新的结点并且右子树深度增加，需要平衡该树，将右子树的深度平衡至左子树上 */
+              balance(node, path.at(-1)?.node, false);
+            }
+            node.bfactor = EQ_DEEP;
+
+            /* 同上 */
+            break;
+          } // while
+        }
+
+        /* 平衡树
+        root：树根
+        parent: 在整个二叉排序树中，root的父结点
+        leftBalance： 树左子树较深一些，需平衡至右侧(true), 树右子树较深，需平衡至左侧(false) */
+        function _balance(root, parent, leftBalance) {
+          const rotate = _rotate.bind(this);
+
+          if (leftBalance) {
+            const left = root.left;
+            if (left.bfactor === L_DEEPER) {
+              /* left的左子树上插入结点后深度增加，此时仅右旋root树(以root为根的树)即可 */
+              root.bfactor = left.bfactor = EQ_DEEP; // 嘿嘿
+              rotate(root, parent, true);
+              return;
+            }
+
+            // left.bfactor === R_DEEPER
+
+            // 先修改结点的平衡因子，再旋转
+            switch (left.right.bfactor) {
+              /* 'L_DEEPER'与'R_DEEPER'表示插入前left有右子树，新的结点插入至右子树的左右子树上 */
+              case L_DEEPER:
+                root.bfactor = R_DEEPER;
+                left.bfactor = EQ_DEEP;
+                break;
+              case R_DEEPER:
+                root.bfactor = EQ_DEEP;
+                left.bfactor = L_DEEPER;
+                break;
+              case EQ_DEEP:
+                // 插入前left没有左右子树，新的结点插入至left的右子树上
+                left.bfactor = root.bfactor = EQ_DEEP;
+                break;
+              default:
+                throw new Error('unknown bfactor!');
+            }
+            left.right.bfactor = EQ_DEEP;
+
+            // left的右子树上插入结点后深度增加，此时需要先左旋left树，然后右旋root树
+            rotate(left, root, false);
+            rotate(root, parent, true);
+
+            return;
+          }
+
+          // leftBalance === false
+
+          const right = root.right;
+          if (right.bfactor === R_DEEPER) {
+            root.bfactor = right.bfactor = EQ_DEEP;
+            rotate(root, parent, false);
+            return;
+          }
+
+          // right.bfactor === L_DEEPER
+          switch (right.left.bfactor) {
+            case L_DEEPER:
+              root.bfactor = EQ_DEEP;
+              right.bfactor = R_DEEPER;
+              break;
+            case R_DEEPER:
+              root.bfactor = L_DEEPER;
+              right.bfactor = EQ_DEEP;
+              break;
+            case EQ_DEEP:
+              root.bfactor = right.bfactor = EQ_DEEP;
+              break;
+            default:
+              throw new Error('unknown bfactor');
+          }
+          right.left.bfactor = EQ_DEEP;
+
+          rotate(right, root, true);
+          rotate(root, parent, false);
+        }
+
+        /* 树旋转操作
+        root: 树根
+        parent: 在整个二叉排序树中，root的父结点
+        toRight: 向左旋转(false)，向右旋转(true) */
+        function _rotate(root, parent, toRight) {
+          let rootAsLeft;
+          if (parent) {
+            rootAsLeft = parent.left === root;
+          }
+
+          if (toRight) {
+            const left = root.left;
+
+            if (!left) return;
+
+            root.left = left.right;
+            left.right = root;
+
+            if (parent) {
+              rootAsLeft ? (parent.left = left) : (parent.right = left);
+            } else {
+              this.root = left;
+            }
+
+            return;
+          }
+
+          // 向左旋转
+          const right = root.right;
+
+          if (!right) return;
+
+          root.right = right.left;
+          right.left = root;
+
+          if (parent) {
+            rootAsLeft ? (parent.left = right) : (parent.right = right);
+          } else {
+            this.root = right;
+          }
+        }
+      };
+
+      const tt = new STree();
+      tt.balancedSearch(5, 4, 3, 2, 1, 3.5);
+
+      console.log('tt seq: %s', tt.levelOrder());
     </script>
   </body>
 </html>
