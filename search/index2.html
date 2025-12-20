@@ -285,11 +285,11 @@
         /* 平衡树
         root：树根
         parent: 在整个二叉排序树中，root的父结点
-        leftBalance： 树左子树较深一些，需平衡至右侧(true), 树右子树较深，需平衡至左侧(false) */
-        function _balance(root, parent, leftBalance) {
+        leftToRight： 树左子树较深一些，需平衡至右侧(true), 树右子树较深，需平衡至左侧(false) */
+        function _balance(root, parent, leftToRight) {
           const rotate = _rotate.bind(this);
 
-          if (leftBalance) {
+          if (leftToRight) {
             const left = root.left;
             if (left.bfactor === L_DEEPER) {
               /* left的左子树上插入结点后深度增加，此时仅右旋root树(以root为根的树)即可 */
@@ -327,7 +327,7 @@
             return;
           }
 
-          // leftBalance === false
+          // leftToRight === false
 
           const right = root.right;
           if (right.bfactor === R_DEEPER) {
