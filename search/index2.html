@@ -285,7 +285,7 @@
         /* 平衡树
         root：树根
         parent: 在整个二叉排序树中，root的父结点
-        leftToRight： 树左子树较深一些，需平衡至右侧(true), 树右子树较深，需平衡至左侧(false) */
+        leftToRight： root的左子树较深一些，需平衡至右侧(true), root的右子树较深，需平衡至左侧(false) */
         function _balance(root, parent, leftToRight) {
           const rotate = _rotate.bind(this);
 
