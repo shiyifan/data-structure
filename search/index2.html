@@ -191,7 +191,7 @@
 
       /* 查找多个元素，如果元素不存在则插入并根据需要平衡该二叉树 */
       STree.prototype.balancedSearch = function (...keys) {
-        /* 平衡树的三种状态 */
+        /* 平衡树的三种状态: 平衡因子（左子树深度 - 右子树深度） */
         const L_DEEPER = 1; // 左子树更深一层
         const EQ_DEEP = 0; // 左右子树深度相同
         const R_DEEPER = -1; // 右子树更深一层
@@ -205,10 +205,10 @@
             continue;
           }
 
-          /* 在树中查找元素 */
+          /* 树已实例化，在树中查找元素 */
           let pNode = this.root;
           let found = false;
-          const path = []; // 记录查找路径
+          const path = []; // 以栈的顺序记录查找路径
           while (pNode) {
             if (key === pNode.data) {
               found = true;
@@ -216,11 +216,13 @@
             }
 
             if (key < pNode.data) {
+              // 继续在左子树上查找
               path.push({ node: pNode, /* 是否继续在左子树上查找 */ nextLeft: true });
               pNode = pNode.left;
               continue;
             }
 
+            // 继续在右子树上查找
             path.push({ node: pNode, nextLeft: false });
             pNode = pNode.right;
           }
