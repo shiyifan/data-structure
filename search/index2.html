@@ -412,7 +412,7 @@
           const path = [];
 
           while (pNode && pNode.data !== key) {
-            let h = { node: pNode };
+            let h = { node: pNode }; // 查找路径上的一个节点
             if (pNode.data > key) {
               h.nextLeft = true;
               pNode = pNode.left;
