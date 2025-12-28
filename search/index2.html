@@ -433,10 +433,11 @@
           }
 
           if (!pNode.left || !pNode.right) {
-            // 待删元素是叶子结点或者仅有左子树或右子树
+            // 待删元素是叶子结点或者'仅有左子树或右子树'
 
             if (last == null) {
               // 待删元素是根节点
+
               this.root = pNode.left || pNode.right;
 
               /* 删除前为平衡二叉树，作为根节点，仅有'左子树或右子树'或者'无左右子树'的情况下，
@@ -452,7 +453,7 @@
 
             // 待删元素为非根节点，所以还需要判断以pParent为根节点的树和其祖先树是否平衡
           } else {
-            // 待删元素既有左子树也有右子树
+            // 待删元素既有左子树也有右子树，此时采用替换的方式
 
             const pLeft = pNode.left;
             if (!pLeft.right) {
@@ -463,13 +464,15 @@
                 this.root.data = pLeft.data;
                 this.root.left = pLeft.left;
 
+                path.push({ node: this.root, nextLeft: true });
                 // 整颗树的左子树深度-1,继续判断树是否平衡
+              } else {
+                pNode.data = pLeft.data;
+                pNode.left = pLeft.left;
+
+                path.push({ node: pNode, nextLeft: true });
+                // pNode树的左子树深度-1，继续判断pNode树及其祖先树是否平衡
               }
-
-              pParent.data = pLeft.data;
-              pParent.left = pLeft.left;
-
-              // pParent树的左子树深度-1，继续判断pParent树及其祖先树是否平衡
             } else {
               /* pLeft.right != null 待删元素的左子树有右子树 */
 
@@ -485,7 +488,7 @@
               pNode.data = pr.data;
               path.at(-1).right = pr.left;
 
-              // 最右侧结点的父结点的右子树深度-1, 继续判断父结点的树及其祖先树是否平衡
+              // pr父结点的右子树深度-1, 继续判断pr父结点的树及其祖先树是否平衡
             }
           }
         }
