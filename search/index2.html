@@ -405,6 +405,10 @@
 
       /* 删除多个元素，并根据每个元素删除后的结果，按需平衡二叉树 */
       STree.prototype.balancedRemove = function (...keys) {
+        const L_DEEPER = 1; // 左子树更深一层
+        const EQ_DEEP = 0; // 左右子树深度相同
+        const R_DEEPER = -1; // 右子树更深一层
+
         for (const key of keys) {
           /* 查找该元素 */
           let pNode = this.root; // 待删元素
@@ -491,6 +495,23 @@
               path.at(-1).node.right = pr.left;
 
               // pr父结点的右子树深度-1, 继续判断pr父结点的树及其祖先树是否平衡
+            }
+          }
+
+          /* 已删除结点并重新调整了二叉树.沿着查找路径判断并按需平衡删除结点后的二叉树 */
+          while (path.length !== 0) {
+            const { nextLeft, node } = path.pop();
+
+            if (node.bfactor === EQ_DEEP) {
+              node.bfactor = nextLeft ? R_DEEPER : L_DEEPER;
+
+              /* node的左右子树虽然深度-1,但是node树的深度不变，同时也不影响node祖先树的深度，所以不再
+              继续判断祖先树的深度变化 */
+              break;
+            }
+
+            if (node.bfactor === L_DEEPER) {
+
             }
           }
         }
