@@ -408,7 +408,9 @@
         for (const key of keys) {
           /* 查找该元素 */
           let pNode = this.root; // 待删元素
+          /* 查找待删元素的路径与查找待删元素最右元素的路径，删除元素后将按照这个路径依次判断个祖先树是否平衡 */
           const path = [];
+
           while (pNode && pNode.data !== key) {
             let h = { node: pNode };
             if (pNode.data > key) {
@@ -427,7 +429,7 @@
           const last = path.at(-1); // 待删元素的父结点
           let pParent, pIsLeft;
           if (last) {
-            ({ node: pParent, nextLeft: pIsLeft}) =  last;
+            ({ node: pParent, nextLeft: pIsLeft } = last);
           }
 
           if (!pNode.left || !pNode.right) {
@@ -435,7 +437,7 @@
 
             if (last == null) {
               // 待删元素是根节点
-              this.root = pNode.left ? pNode.left : pNode.right;
+              this.root = pNode.left || pNode.right;
 
               /* 删除前为平衡二叉树，作为根节点，仅有'左子树或右子树'或者'无左右子树'的情况下，
               树中最多拥有两个结点，此时删除根节点后，无需继续判断是否平衡 */
@@ -443,13 +445,48 @@
             }
 
             if (pIsLeft) {
-
+              pParent.left = pNode.left || pNode.right; // pParent左子树深度-1
+            } else {
+              pParent.right = pNode.left || pNode.right; // pParent右子树深度-1
             }
 
-            // 待删元素不是根节点
-            pIsLeft ? (pParent.left = null) : (pParent.right = null);
-          } else if (pNode.left && !pNode.right) {
-            // 待删元素仅有左子树
+            // 待删元素为非根节点，所以还需要判断以pParent为根节点的树和其祖先树是否平衡
+          } else {
+            // 待删元素既有左子树也有右子树
+
+            const pLeft = pNode.left;
+            if (!pLeft.right) {
+              /* 待删元素的左子树没有右子树，则直接将左子树替换至待删元素位置即可 */
+
+              if (last == null) {
+                // 待删元素是根节点
+                this.root.data = pLeft.data;
+                this.root.left = pLeft.left;
+
+                // 整颗树的左子树深度-1,继续判断树是否平衡
+              }
+
+              pParent.data = pLeft.data;
+              pParent.left = pLeft.left;
+
+              // pParent树的左子树深度-1，继续判断pParent树及其祖先树是否平衡
+            } else {
+              /* pLeft.right != null 待删元素的左子树有右子树 */
+
+              /* 将待删结点与其左子结点添加至查找路径中 */
+              path.push({ node: pNode, nextLeft: true }, { node: pLeft, nextLeft: false });
+
+              let pr = pLeft.right; // pLeft树的最右侧结点
+              /* 寻找pLeft树的最右侧结点 */
+              while (pr.right) {
+                pathRight.push({ node: pr, nextLeft: false });
+                pr = pr.right;
+              }
+              pNode.data = pr.data;
+              path.at(-1).right = pr.left;
+
+              // 最右侧结点的父结点的右子树深度-1, 继续判断父结点的树及其祖先树是否平衡
+            }
           }
         }
       };
