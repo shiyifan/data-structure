@@ -412,9 +412,9 @@
           const path = [];
 
           while (pNode && pNode.data !== key) {
-            let h = { node: pNode }; // 查找路径上的一个节点
+            let h = { node: pNode }; // '查找路径'中的一个节点
             if (pNode.data > key) {
-              h.nextLeft = true;
+              h.nextLeft = true; // 在该路径结点的左侧继续查找
               pNode = pNode.left;
             } else {
               h.nextLeft = false;
@@ -426,7 +426,7 @@
           if (!pNode) continue; // 未能找到待删元素
 
           // 已找到待删元素
-          const last = path.at(-1); // 待删元素的父结点
+          const last = path.at(-1); // 待删元素的父结点，为空时表示待删元素为根节点
           let pParent, pIsLeft;
           if (last) {
             ({ node: pParent, nextLeft: pIsLeft } = last);
