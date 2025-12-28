@@ -408,7 +408,7 @@
         for (const key of keys) {
           /* 查找该元素 */
           let pNode = this.root; // 待删元素
-          /* 查找待删元素的路径与查找待删元素最右元素的路径，删除元素后将按照这个路径依次判断个祖先树是否平衡 */
+          /* 从树根到实际上被删除的元素的路径，删除元素后将按照这个路径依次判断个祖先树是否平衡 */
           const path = [];
 
           while (pNode && pNode.data !== key) {
@@ -455,6 +455,10 @@
           } else {
             // 待删元素既有左子树也有右子树，此时采用替换的方式
 
+            /* 待删元素有左右子树时，实际被删除的元素为待删元素左子树上的一个节点，因此当前与关键字匹配的
+            结点也是路径上的一点 */
+            path.push({ node: pNode, nextLeft: true });
+
             const pLeft = pNode.left;
             if (!pLeft.right) {
               /* 待删元素的左子树没有右子树，则直接将左子树替换至待删元素位置即可 */
@@ -464,20 +468,18 @@
                 this.root.data = pLeft.data;
                 this.root.left = pLeft.left;
 
-                path.push({ node: this.root, nextLeft: true });
                 // 整颗树的左子树深度-1,继续判断树是否平衡
               } else {
                 pNode.data = pLeft.data;
                 pNode.left = pLeft.left;
 
-                path.push({ node: pNode, nextLeft: true });
                 // pNode树的左子树深度-1，继续判断pNode树及其祖先树是否平衡
               }
             } else {
-              /* pLeft.right != null 待删元素的左子树有右子树 */
+              /* pLeft.right != null 待删元素的左子结点有右子树 */
 
-              /* 将待删结点与其左子结点添加至查找路径中 */
-              path.push({ node: pNode, nextLeft: true }, { node: pLeft, nextLeft: false });
+              /* 将其左子结点添加至查找路径中 */
+              path.push({ node: pLeft, nextLeft: false });
 
               let pr = pLeft.right; // pLeft树的最右侧结点
               /* 寻找pLeft树的最右侧结点 */
@@ -491,16 +493,12 @@
               // pr父结点的右子树深度-1, 继续判断pr父结点的树及其祖先树是否平衡
             }
           }
-
-          console.log('remove path: ', path);
         }
       };
 
       const tt = new STree();
-      tt.balancedSearch(5, 4, 3, 2, 1, 3.5, 2.5);
+      tt.balancedSearch(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
       console.log('tt seq: %s', tt.levelOrder());
-
-      tt.balancedRemove(3)
 
       console.log('tt seq removed: %s', tt.levelOrder());
     </script>
