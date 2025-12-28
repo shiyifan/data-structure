@@ -403,6 +403,57 @@
         }
       };
 
+      /* 删除多个元素，并根据每个元素删除后的结果，按需平衡二叉树 */
+      STree.prototype.balancedRemove = function (...keys) {
+        for (const key of keys) {
+          /* 查找该元素 */
+          let pNode = this.root; // 待删元素
+          const path = [];
+          while (pNode && pNode.data !== key) {
+            let h = { node: pNode };
+            if (pNode.data > key) {
+              h.nextLeft = true;
+              pNode = pNode.left;
+            } else {
+              h.nextLeft = false;
+              pNode = pNode.right;
+            }
+            path.push(h);
+          }
+
+          if (!pNode) continue; // 未能找到待删元素
+
+          // 已找到待删元素
+          const last = path.at(-1); // 待删元素的父结点
+          let pParent, pIsLeft;
+          if (last) {
+            ({ node: pParent, nextLeft: pIsLeft}) =  last;
+          }
+
+          if (!pNode.left || !pNode.right) {
+            // 待删元素是叶子结点或者仅有左子树或右子树
+
+            if (last == null) {
+              // 待删元素是根节点
+              this.root = pNode.left ? pNode.left : pNode.right;
+
+              /* 删除前为平衡二叉树，作为根节点，仅有'左子树或右子树'或者'无左右子树'的情况下，
+              树中最多拥有两个结点，此时删除根节点后，无需继续判断是否平衡 */
+              continue;
+            }
+
+            if (pIsLeft) {
+
+            }
+
+            // 待删元素不是根节点
+            pIsLeft ? (pParent.left = null) : (pParent.right = null);
+          } else if (pNode.left && !pNode.right) {
+            // 待删元素仅有左子树
+          }
+        }
+      };
+
       const tt = new STree();
       tt.balancedSearch(5, 4, 3, 2, 1, 3.5);
 
