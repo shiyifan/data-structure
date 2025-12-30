@@ -505,14 +505,33 @@
             if (node.bfactor === EQ_DEEP) {
               node.bfactor = nextLeft ? R_DEEPER : L_DEEPER;
 
-              /* node的左右子树虽然深度-1,但是node树的深度不变，同时也不影响node祖先树的深度，所以不再
+              /* node的左右子树虽然深度变为-1,但是node树的深度不变，同时也不影响node祖先树的深度，所以不再
               继续判断祖先树的深度变化 */
               break;
             }
 
             if (node.bfactor === L_DEEPER) {
+              /* node树的左子树较深 */
 
+              if (nextLeft) {
+                /* 删除结点后左子树深度-1,那么该树平衡因子为0, 不过，该node树的深度-1，因此继续判断上层祖先树的深度变化 */
+                node.bfactor = EQ_DEEP;
+                continue;
+              }
+
+              /* 删除结点后右子树深度-1,由于删除前左子树更深一层，删除后node树将失去平衡，次时需要先平衡node树 */
+
+              // TODO: balance left child tree
             }
+
+            /* node树的右子树较深 */
+
+            if (!nextLeft) {
+              node.bfactor = EQ_DEEP;
+              continue;
+            }
+
+            // TODO: balance right child tree
           }
         }
       };
