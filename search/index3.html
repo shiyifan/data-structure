@@ -35,7 +35,8 @@
         this.order = order; // B树的阶
       }
 
-      /* 将BTree导出为JSON格式，该格式可作为参数输入到'https://dbis-btree.uibk.ac.at/'中，显示该树的可视化图像 */
+      /* 将BTree导出为JSON格式，该格式可作为参数输入到'https://dbis-btree.uibk.ac.at/'中，显示该树的可视化图像，
+      注意，可视化时，需要确保为合法的BTree结构 */
       BTree.prototype.export = function () {
         const output = { maxKeys: this.order - 1, keyType: 'number' };
         const nodeData = {}; // 适合可视化的树结点，类似于BNode，用树状结构保存整颗树的结点
