@@ -38,23 +38,31 @@
       /* 将BTree导出为JSON格式，该格式可作为参数输入到'https://dbis-btree.uibk.ac.at/'中，显示该树的可视化图像 */
       BTree.prototype.export = function () {
         const output = { maxKeys: this.order - 1, keyType: 'number' };
-        const nodeData = {};
+        const nodeData = {}; // 适合可视化的树结点，类似于BNode，用树状结构保存整颗树的结点
 
-        // node: { name: { id: 0, keys: [] }, children: [ ... ] }
+        /* 树结点的json结构: 
+          { 
+            name: {  
+              id: 0     // 唯一编号, 
+              keys: []  // 所有的关键字
+            }, 
+            children: [ ... ]  // 所有子结点
+          }
+        */
 
-        let p = this.root;
-        let i = 0;
-        const stack = [];
-        stack.push({ node: p, json: nodeData });
+        let i = 0; // 结点编号
+        const queue = [];
+        queue.push({ node: this.root, json: nodeData });
 
-        while (stack.length > 0) {
-          const { node, json } = stack.shift();
+        /* 以按层遍历的方式构建可视化的树状结构 */
+        while (queue.length > 0) {
+          const { node, json } = queue.shift();
           json.name = { id: i++, keys: node.keys.slice() };
           json.children = [];
 
           for (let idx = 0; idx < node.children.length; idx++) {
             json.children[idx] = {};
-            stack.push({ node: node.children[idx], json: json.children[idx] });
+            queue.push({ node: node.children[idx], json: json.children[idx] });
           }
         }
 
