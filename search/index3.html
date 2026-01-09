@@ -62,6 +62,8 @@
           json.children = [];
 
           for (let idx = 0; idx < node.children.length; idx++) {
+            if (!node.children[idx]) continue;
+
             json.children[idx] = {};
             queue.push({ node: node.children[idx], json: json.children[idx] });
           }
@@ -74,30 +76,122 @@
       BTree.prototype.search = function (...keys) {
         for (const key of keys) {
           if (!this.root) {
+            // 该BTree尚未初始化
+
             const n = new BNode();
             n.keys.push(key);
+            n.children.length += 2; // keys长度更新时，也要同时更新children的长度，由于是插入第一个key，所以长度增加2
             this.root = n;
             continue;
           }
 
           let node = this.root;
+          let lastNode, lastKeyI; // 查找失败时，保存最后一个遍历的结点以及key应该位于的索引
 
-          /* 如果当前结点有key，则通过折半查找确定key的索引，并返回key所在的结点，否则确定进一步查找子树的位置 */
-          while (true) {}
-        }
+          /* 如果当前结点有匹配的key，则通过折半查找确定key的索引，否则确定下一步被查找的子树的位置 */
+          while (node) {
+            const { found, i } = bSearch(node.keys, key); // 折半查找
 
-        /* 折半查找
-        返回值: 
+            if (found) break;
+
+            // found === false，当前结点查找失败
+
+            lastNode = node;
+            lastKeyI = i + 1;
+            node = node.children[i + 1];
+          } // while (node)
+
+          if (node) continue; // 查找成功，继续查找下一个
+
+          // 查找失败，树中没有该关键字，插入这个关键字
+
+          let insertedK = key; // 插入当前结点的key，也是插入父结点的key
+          let insNode = lastNode;
+          let insIndex = lastKeyI;
+          let twoSplit = null; // 数组类型，保存分裂后的两个结点，第一个元素为分裂点左侧，第二个元素为分裂点右侧
+          while (true) {
+            const { keys: insKeys, children: insChildren } = insNode;
+
+            const isKeyAppended = insKeys.length === insIndex; // 是否在所有key之后插入新的key
+            /* 在insNode的insIndex位置插入该关键字
+            这里手动插入并移动元素，未采用'Array.prototype.splice'方法 */
+            insKeys.length++;
+            for (let n = insKeys.length - 1; n >= insIndex + 1; n--) {
+              insKeys[n] = insKeys[n - 1];
+            }
+            insKeys[insIndex] = insertedK;
+            /* 子树数组长度也+1 */
+            insChildren.length++;
+
+            if (twoSplit) {
+              // 上一层结点已被分裂，位于分裂点的key已插入当前结点中，更新指向两个分裂后结点的指针
+
+              /* 如果不在末尾插入，那么需要调整插入key左侧与右侧的子树。否则，仅需要调整右侧的子树即可 */
+              if (!isKeyAppended) {
+                // 移动子树数组的元素
+                for (let n = insChildren.length - 1; n >= insIndex + 1; n--) {
+                  insChildren[n] = insChildren[n - 1];
+                }
+                insChildren[insIndex] = twoSplit[0]; // 分裂点key的左侧是分裂时保留的原结点
+              }
+              insChildren[insIndex + 1] = twoSplit[1]; // 分裂点key的右侧是分裂时新建的结点
+            }
+
+            if (insKeys.length <= this.order - 1) {
+              /* 插入元素后，结点key个数未超过最大个数(阶数 - 1)，查找下一个结点 */
+              break;
+            }
+
+            /* 超过最大个数需要分裂这个结点 */
+
+            const splitI = Math.ceil(this.order / 2) - 1; // 分割点索引
+            insertedK = insKeys[splitI]; // 分割点key，将被插入父结点
+
+            const newNode = new BNode(insNode.parent);
+            /* 将分割点右侧[splitI + 1 ... insKeys.length - 1]的key复制到新结点中 */
+            for (let n = splitI + 1; n < insKeys.length; n++) {
+              newNode.keys[n - (splitI + 1)] = insKeys[n];
+            }
+            // for (let n = splitI + 1)
+            newNode.children.length = newNode.keys.length + 1;
+
+            insKeys.length = splitI; /* 分割点左侧[0 ... splitI - 1]的key保留在原结点中 */
+
+            twoSplit = [insNode, newNode];
+            insNode = insNode.parent;
+
+            if (!insNode) {
+              // 根节点已被分割，需创建新的根节点
+
+              const newRoot = new BNode();
+              newRoot.keys.push(insertedK);
+              newRoot.children[0] = twoSplit[0];
+              newRoot.children[1] = twoSplit[1];
+              twoSplit[0].parent = twoSplit[1].parent = newRoot;
+              this.root = newRoot;
+
+              break;
+            }
+
+            const { i: insertedI } = bSearch(insNode.keys, insertedK); // 计算分割点key在父结点中插入的位置
+            insIndex = insertedI + 1;
+          } // while
+        } // for (keys)
+
+        /* 在结点中折半查找key
+        返回值:
           { 
             found:
               是否找到key
-            i: 
-              如果找到key，i表示索引，
+
+            i: 索引
+              如果找到key，i表示对应key的索引，
               否则, (i不可能等于keys.length - 1)
-                0 <= i <= keys.length - 2:  key位于i与i+1之间
-                i === -1:                    key位于keys第一个元素之前
-                i === keys.length:           key位于keys最后一个元素之后
-          } 
+                0 <= i <= keys.length - 2:   key位于keys[i]与keys[i + 1]之间
+                i === -1:                    key位于keys[0]之前
+                i === keys.length - 1:       key位于keys[keys.length - 1]之后
+              上面未找到key的三种情况下，需要继续在children[i + 1]子树中查找
+          }
         */
         function bSearch(keys, key) {
           let low = 0;
@@ -123,15 +217,18 @@
           }
           if (low > keys.length - 1) {
             // key值位于最后一个关键字之后
-            return { found: false, i: keys.length };
+            return { found: false, i: keys.length - 1 };
           }
 
           return { found: false, i: high };
-        }
-      };
+        } // end bSearch
+      }; // end BTree.prototype.search
 
-      const bt = new BTree();
-      // bt.search();
+      const bt = new BTree(3);
+      bt.search(2, 3, 4, 5, 6, 7);
+
+      const s = bt.export();
+      console.log('bt: \n%s', s);
     </script>
   </body>
 </html>
