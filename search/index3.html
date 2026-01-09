@@ -32,7 +32,7 @@
       /* B-Tree */
       function BTree(order) {
         this.root = null; // 根结点
-        this.order = order; // B树的阶
+        this.order = order; // B树的阶, "阶数 - 1"为结点最多可保存的key个数
       }
 
       /* 将BTree导出为JSON格式，该格式可作为参数输入到'https://dbis-btree.uibk.ac.at/'中，显示该树的可视化图像，
@@ -148,9 +148,9 @@
             }
 
             /* 超过最大个数需要分裂这个结点
-            分裂为两个结点，并将位于分裂点的key插入父结点中 */
+            分裂为两个结点: 第一个结点拥有BTree所要求的最少key个数，另一个拥有剩余的key。并将位于分裂点的key插入父结点中 */
 
-            const splitI = Math.ceil(this.order / 2) - 1; // 分裂点索引
+            const splitI = Math.ceil(this.order / 2) - 1; // 分裂点索引，BTree结点至少拥有"(阶数 / 2) - 1"个key值，但根节点至少拥有一个key值
             insertedK = insKeys[splitI]; // 分裂点key，将被插入父结点
 
             const newNode = new BNode(insNode.parent);
