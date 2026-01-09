@@ -144,24 +144,29 @@
 
             /* 超过最大个数需要分裂这个结点 */
 
-            const splitI = Math.ceil(this.order / 2) - 1; // 分割点索引
-            insertedK = insKeys[splitI]; // 分割点key，将被插入父结点
+            const splitI = Math.ceil(this.order / 2) - 1; // 分裂点索引
+            insertedK = insKeys[splitI]; // 分裂点key，将被插入父结点
 
             const newNode = new BNode(insNode.parent);
-            /* 将分割点右侧[splitI + 1 ... insKeys.length - 1]的key复制到新结点中 */
-            for (let n = splitI + 1; n < insKeys.length; n++) {
-              newNode.keys[n - (splitI + 1)] = insKeys[n];
+            /* 将分裂点右侧[splitI + 1 ... insKeys.length - 1]的key与children复制到新结点中 */
+            const spStart = splitI + 1; // 原结点中分裂起始索引
+            for (let n = spStart; n < insKeys.length; n++) {
+              newNode.keys[n - spStart] = insKeys[n];
             }
-            // for (let n = splitI + 1)
-            newNode.children.length = newNode.keys.length + 1;
+            for (let n = spStart; n < insChildren.length; n++) {
+              newNode.children[n - spStart] = insChildren[n];
+              // 同时需要更新分裂点右侧子树的父结点为新建结点
+              newNode.children[n - spStart] && (newNode.children[n - spStart].parent = newNode);
+            }
 
-            insKeys.length = splitI; /* 分割点左侧[0 ... splitI - 1]的key保留在原结点中 */
+            insKeys.length = splitI; /* 分裂点左侧[0 ... splitI - 1]的key保留在原结点中 */
+            insChildren.length = splitI + 1;
 
             twoSplit = [insNode, newNode];
             insNode = insNode.parent;
 
             if (!insNode) {
-              // 根节点已被分割，需创建新的根节点
+              // 根节点已被分裂，需创建新的根节点
 
               const newRoot = new BNode();
               newRoot.keys.push(insertedK);
@@ -224,11 +229,15 @@
         } // end bSearch
       }; // end BTree.prototype.search
 
-      const bt = new BTree(3);
-      bt.search(2, 3, 4, 5, 6, 7);
+      const bt = new BTree(4);
+      bt.search(2, 3, 4, 5, 6, 7, 1, 0, -1, 8, 9, 10, -5, -6, -7);
+
+      const bt2 = new BTree(4);
+      bt2.search(-1, 8, 9, 10, -5, -6, -7, 2, 3, 4, 5, 6, 7, 1, 0);
 
       const s = bt.export();
       console.log('bt: \n%s', s);
+      console.log('bt2: \n%s', bt2.export());
     </script>
   </body>
 </html>
