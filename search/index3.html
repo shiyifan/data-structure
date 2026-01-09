@@ -19,7 +19,7 @@
     <script>
       /* B-Tree结点 */
       function BNode(parent) {
-        /* 结点中所有的关键字，按升序排列 */
+        /* 结点中所有的关键字，**按升序排列** */
         this.keys = [];
 
         /* 子树的根节点，其中，children.length = keys.length + 1，children[i]与children[i + 1]为keys[i]的左右子树
@@ -104,11 +104,16 @@
           if (node) continue; // 查找成功，继续查找下一个
 
           // 查找失败，树中没有该关键字，插入这个关键字
+          insertKey.call(this, lastNode, lastKeyI, key);
+        } // for (keys)
 
-          let insertedK = key; // 插入当前结点的key，也是插入父结点的key
-          let insNode = lastNode;
-          let insIndex = lastKeyI;
+        /* 在结点node中的position位置插入key */
+        function insertKey(node, position, key) {
+          let insertedK = key;
+          let insNode = node;
+          let insIndex = position;
           let twoSplit = null; // 数组类型，保存分裂后的两个结点，第一个元素为分裂点左侧，第二个元素为分裂点右侧
+
           while (true) {
             const { keys: insKeys, children: insChildren } = insNode;
 
@@ -124,7 +129,7 @@
             insChildren.length++;
 
             if (twoSplit) {
-              // 上一层结点已被分裂，位于分裂点的key已插入当前结点中，更新指向两个分裂后结点的指针
+              // 上一层结点已被分裂，位于分裂点的key已插入当前结点中，更新指向两个分裂后子树的指针
 
               /* 如果不在末尾插入，那么需要调整插入key左侧与右侧的子树。否则，仅需要调整右侧的子树即可 */
               if (!isKeyAppended) {
@@ -142,7 +147,8 @@
               break;
             }
 
-            /* 超过最大个数需要分裂这个结点 */
+            /* 超过最大个数需要分裂这个结点
+            分裂为两个结点，并将位于分裂点的key插入父结点中 */
 
             const splitI = Math.ceil(this.order / 2) - 1; // 分裂点索引
             insertedK = insKeys[splitI]; // 分裂点key，将被插入父结点
@@ -159,11 +165,13 @@
               newNode.children[n - spStart] && (newNode.children[n - spStart].parent = newNode);
             }
 
-            insKeys.length = splitI; /* 分裂点左侧[0 ... splitI - 1]的key保留在原结点中 */
+            /* 删除分裂点右侧key，包括位于分裂点的key，分裂点左侧[0 ... splitI - 1]的key保留在原结点中 */
+            insKeys.length = splitI;
+            /* 同时删除分裂点右侧的所有子树，但不包括位于分裂点索引的子树（因为children[i] < key[i] < children[i + 1]） */
             insChildren.length = splitI + 1;
 
             twoSplit = [insNode, newNode];
-            insNode = insNode.parent;
+            insNode = insNode.parent; // 下一次循环将key插入父结点中
 
             if (!insNode) {
               // 根节点已被分裂，需创建新的根节点
@@ -181,7 +189,7 @@
             const { i: insertedI } = bSearch(insNode.keys, insertedK); // 计算分割点key在父结点中插入的位置
             insIndex = insertedI + 1;
           } // while
-        } // for (keys)
+        }
 
         /* 在结点中折半查找key
         返回值:
