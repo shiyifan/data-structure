@@ -90,7 +90,7 @@
 
           /* 如果当前结点有匹配的key，则通过折半查找确定key的索引，否则确定下一步被查找的子树的位置 */
           while (node) {
-            const { found, i } = bSearch(node.keys, key); // 折半查找
+            const { found, i } = this.bSearch(node.keys, key); // 折半查找
 
             if (found) break;
 
@@ -186,12 +186,13 @@
               break;
             }
 
-            const { i: insertedI } = bSearch(insNode.keys, insertedK); // 计算分割点key在父结点中插入的位置
+            const { i: insertedI } = this.bSearch(insNode.keys, insertedK); // 计算分割点key在父结点中插入的位置
             insIndex = insertedI + 1;
           } // while
         }
+      }; // end BTree.prototype.search
 
-        /* 在结点中折半查找key
+      /* 在结点中折半查找key
         返回值:
           { 
             found:
@@ -206,36 +207,44 @@
               上面未找到key的三种情况下，需要继续在children[i + 1]子树中查找
           }
         */
-        function bSearch(keys, key) {
-          let low = 0;
-          let high = keys.length - 1;
+      BTree.prototype.bSearch = function (keys, key) {
+        let low = 0;
+        let high = keys.length - 1;
 
-          while (low <= high) {
-            const middle = Math.floor((low + high) / 2);
+        while (low <= high) {
+          const middle = Math.floor((low + high) / 2);
 
-            if (keys[middle] === key) return { found: true, i: middle };
+          if (keys[middle] === key) return { found: true, i: middle };
 
-            if (keys[middle] < key) {
-              low = middle + 1;
-              continue;
-            }
-
-            // keys[middle] > key
-            high = middle - 1;
+          if (keys[middle] < key) {
+            low = middle + 1;
+            continue;
           }
 
-          if (high < 0) {
-            // key值位于第一个关键字之前
-            return { found: false, i: -1 };
-          }
-          if (low > keys.length - 1) {
-            // key值位于最后一个关键字之后
-            return { found: false, i: keys.length - 1 };
-          }
+          // keys[middle] > key
+          high = middle - 1;
+        }
 
-          return { found: false, i: high };
-        } // end bSearch
-      }; // end BTree.prototype.search
+        if (high < 0) {
+          // key值位于第一个关键字之前
+          return { found: false, i: -1 };
+        }
+        if (low > keys.length - 1) {
+          // key值位于最后一个关键字之后
+          return { found: false, i: keys.length - 1 };
+        }
+
+        return { found: false, i: high };
+      }; // end BTree.prototype.bSearch
+
+      BTree.prototype.remove = function (...keys) {
+        for (const key of keys) {
+          if (!this.root) return; // 树尚未初始化，无法删除结点
+
+          let node = this.root;
+          const { found, i: subtree } = this.bSearch(node.keys, key);
+        }
+      };
 
       const bt = new BTree(4);
       bt.search(2, 3, 4, 5, 6, 7, 1, 0, -1, 8, 9, 10, -5, -6, -7);
