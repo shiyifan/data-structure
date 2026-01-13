@@ -35,10 +35,25 @@
         this.order = order; // B树的阶, "阶数 - 1"为结点最多可保存的key个数
       }
 
+      Object.defineProperties(BTree.prototype, {
+        /* 结点可保存的最少关键字个数 */
+        minKeyNum: {
+          get() {
+            return Math.ceil(this.order / 2) - 1;
+          },
+        },
+        /* 结点可保存的最多关键字个数 */
+        maxKeyNum: {
+          get() {
+            return this.order - 1;
+          },
+        },
+      });
+
       /* 将BTree导出为JSON格式，该格式可作为参数输入到'https://dbis-btree.uibk.ac.at/'中，显示该树的可视化图像，
       注意，可视化时，需要确保为合法的BTree结构 */
       BTree.prototype.export = function () {
-        const output = { maxKeys: this.order - 1, keyType: 'number' };
+        const output = { maxKeys: this.maxKeyNum, keyType: 'number' };
         const nodeData = {}; // 适合可视化的树结点，类似于BNode，用树状结构保存整颗树的结点
 
         /* 树结点的json结构:
@@ -142,7 +157,7 @@
               insChildren[insIndex + 1] = twoSplit[1]; // 分裂点key的右侧是分裂时新建的结点
             }
 
-            if (insKeys.length <= this.order - 1) {
+            if (insKeys.length <= this.maxKeyNum) {
               /* 插入元素后，结点key个数未超过最大个数(阶数 - 1)，查找下一个结点 */
               break;
             }
@@ -150,7 +165,7 @@
             /* 超过最大个数需要分裂这个结点
             分裂为两个结点: 第一个结点拥有BTree所要求的最少key个数，另一个拥有剩余的key。并将位于分裂点的key插入父结点中 */
 
-            const splitI = Math.ceil(this.order / 2) - 1; // 分裂点索引，BTree结点至少拥有"(阶数 / 2) - 1"个key值，但根节点至少拥有一个key值
+            const splitI = this.minKeyNum; // 分裂点索引，BTree结点至少拥有"(阶数 / 2) - 1"个key值，但根节点至少拥有一个key值
             insertedK = insKeys[splitI]; // 分裂点key，将被插入父结点
 
             const newNode = new BNode(insNode.parent);
@@ -194,7 +209,7 @@
 
       /* 在结点中折半查找key
         返回值:
-          { 
+          {
             found:
               是否找到key
 
@@ -239,22 +254,99 @@
 
       BTree.prototype.remove = function (...keys) {
         for (const key of keys) {
-          if (!this.root) return; // 树尚未初始化，无法删除结点
+          if (!this.root) return; // 树尚未初始化，无法删除结点，直接返回
 
           let node = this.root;
-          const { found, i: subtree } = this.bSearch(node.keys, key);
-        }
+          let removedI;
+          while (node) {
+            const { found, i } = this.bSearch(node.keys, key);
+            removedI = i;
+
+            if (found) break;
+
+            node = node.children[i + 1];
+          }
+          // 查找结束
+
+          if (!node) continue; // 查找失败，树中没有该key，继续查找下一个
+
+          // 查找成功，node.keys[removedI]为待删除的key
+          removeKey.call(this, node, removedI);
+        } // for
+
+        // 删除node.keys[index]中的关键字，并在删除后按需要调整BTree
+        function removeKey(node, index) {
+          /* 根据BTree的插入新key的方式，结点的子树数组children要么全部为空，要么全部非空。如果为空则表示该结点为叶子结点 */
+          const isChild = !node.children[index];
+          let removedNode;
+          let furtherAction; // 如果删除后key个数小于最小值，还需要进一步处理
+
+          if (isChild) {
+            // 待删key位于叶子结点上
+
+            removedNode = node;
+            node.keys.splice(index, 1);
+            node.children.length--; // 子树数组中的值均为空，无需移动元素
+
+            furtherAction = node.keys.length < this.minKeyNum;
+          } else {
+            /* 待删key位于非叶子结点上，此时找到比待删key小的最大key，然后替换至key的位置上。
+            最大的key位于叶子结点上，然后在叶子结点上删除 */
+
+            removedNode = node.children[index];
+            while (removedNode.children.at(-1)) {
+              removedNode = removedNode.children.at(-1); // 寻找子树中最大的key
+            }
+
+            node.keys[index] = removedNode.keys.pop(); // 替换
+            removedNode.children.length--;
+
+            furtherAction = removedNode.keys.length < this.minKeyNum;
+          }
+
+          if (!furtherAction) return;
+
+          // furtherAction === true, removeNode关键字个数小于最小值
+
+          const removeParent = removedNode.parent;
+          const parChildren = removeParent.children;
+          const removedIndex = parChildren.indexOf(removedNode);
+          const leftSibling = parChildren[removedIndex - 1];
+          const rightSibling = parChildren[removedIndex + 1];
+
+          if (leftSibling && leftSibling.keys.length > this.minKeyNum) {
+            // 从左兄弟结点中选取最大的关键字移动至父结点，父结点的邻近关键字移动至removedNode中
+
+            removedNode.keys.unshift(removeParent.keys[removedIndex - 1]); // 父结点中的key插在removedNode第一个位置
+            removeParent.keys[removedIndex - 1] = leftSibling.keys.pop();
+            leftSibling.children.length--;
+
+            return;
+          }
+
+          if (rightSibling && rightSibling.keys.length > this.minKeyNum) {
+            // 从右兄弟结点中选取最小的关键字移动至父结点，父结点的邻近关键字移动至removedNode中
+
+            removedNode.keys.push(removeParent.keys[removedIndex]);
+            removeParent.keys[removedIndex] = rightSibling.keys.shift();
+            rightSibling.children.length--;
+
+            return;
+          }
+
+          // 左右兄弟结点均仅剩最少个数的key，需要合并结点
+          throw new Error('error');
+        } // function removeKey
       };
 
       const bt = new BTree(4);
-      bt.search(2, 3, 4, 5, 6, 7, 1, 0, -1, 8, 9, 10, -5, -6, -7);
+      bt.search(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55);
+      console.log('bt search: \n%s', bt.export());
 
-      const bt2 = new BTree(4);
-      bt2.search(-1, 8, 9, 10, -5, -6, -7, 2, 3, 4, 5, 6, 7, 1, 0);
+      bt.remove(5);
 
       const s = bt.export();
       console.log('bt: \n%s', s);
-      console.log('bt2: \n%s', bt2.export());
     </script>
   </body>
 </html>
