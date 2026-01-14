@@ -56,6 +56,8 @@
         const output = { maxKeys: this.maxKeyNum, keyType: 'number' };
         const nodeData = {}; // 适合可视化的树结点，类似于BNode，用树状结构保存整颗树的结点
 
+        if (!this.root) return '(empty BTree)';
+
         /* 树结点的json结构:
           {
             name: {
@@ -279,7 +281,6 @@
           /* 根据BTree的插入新key的方式，结点的子树数组children要么全部为空，要么全部非空。如果为空则表示该结点为叶子结点 */
           const isChild = !node.children[index];
           let removedNode;
-          let furtherAction; // 如果删除后key个数小于最小值，还需要进一步处理
 
           if (isChild) {
             // 待删key位于叶子结点上
@@ -287,8 +288,6 @@
             removedNode = node;
             node.keys.splice(index, 1);
             node.children.length--; // 子树数组中的值均为空，无需移动元素
-
-            furtherAction = node.keys.length < this.minKeyNum;
           } else {
             /* 待删key位于非叶子结点上，此时找到比待删key小的最大key，然后替换至key的位置上。
             最大的key位于叶子结点上，然后在叶子结点上删除 */
@@ -300,59 +299,97 @@
 
             node.keys[index] = removedNode.keys.pop(); // 替换
             removedNode.children.length--;
-
-            furtherAction = removedNode.keys.length < this.minKeyNum;
           }
 
-          if (!furtherAction) return;
+          // 依据删除后key的个数是否小于最小值，按需要调整树
 
-          // furtherAction === true, removeNode关键字个数小于最小值
+          while (removedNode.keys.length < this.minKeyNum) {
+            if (removedNode === this.root) {
+              if (removedNode.keys.length === 0) {
+                this.root = removedNode.children[0];
+                this.root && (this.root.parent = null);
+              }
+              break;
+            }
 
-          const removeParent = removedNode.parent;
-          const parChildren = removeParent.children;
-          const removedIndex = parChildren.indexOf(removedNode);
-          const leftSibling = parChildren[removedIndex - 1];
-          const rightSibling = parChildren[removedIndex + 1];
+            const removeParent = removedNode.parent;
+            const parentKeys = removeParent.keys;
+            const parentChildren = removeParent.children;
+            const removedIndex = parentChildren.indexOf(removedNode);
+            const leftSibling = parentChildren[removedIndex - 1];
+            const rightSibling = parentChildren[removedIndex + 1];
 
-          if (leftSibling && leftSibling.keys.length > this.minKeyNum) {
-            // 从左兄弟结点中选取最大的关键字移动至父结点，父结点的邻近关键字移动至removedNode中
+            if (leftSibling && leftSibling.keys.length > this.minKeyNum) {
+              // 从左兄弟结点中选取最大的关键字移动至父结点，父结点的邻近关键字移动至removedNode中
 
-            removedNode.keys.unshift(removeParent.keys[removedIndex - 1]); // 父结点中的key插在removedNode第一个位置
-            removeParent.keys[removedIndex - 1] = leftSibling.keys.pop();
-            leftSibling.children.length--;
+              removedNode.keys.unshift(parentKeys[removedIndex - 1]); // 父结点中的key插在removedNode第一个位置
+              parentKeys[removedIndex - 1] = leftSibling.keys.pop();
 
-            return;
-          }
+              const leftLast = leftSibling.children.pop();
+              leftLast && (leftLast.parent = removedNode); // 更新被移动的子树的父结点
+              removedNode.children.unshift(leftLast);
 
-          if (rightSibling && rightSibling.keys.length > this.minKeyNum) {
-            // 从右兄弟结点中选取最小的关键字移动至父结点，父结点的邻近关键字移动至removedNode中
+              return;
+            }
 
-            removedNode.keys.push(removeParent.keys[removedIndex]);
-            removeParent.keys[removedIndex] = rightSibling.keys.shift();
-            rightSibling.children.length--;
+            if (rightSibling && rightSibling.keys.length > this.minKeyNum) {
+              // 从右兄弟结点中选取最小的关键字移动至父结点，父结点的邻近关键字移动至removedNode中
 
-            return;
-          }
+              removedNode.keys.push(parentKeys[removedIndex]);
+              parentKeys[removedIndex] = rightSibling.keys.shift();
 
-          // 左右兄弟结点均仅剩最少个数的key，需要合并结点
+              const rightFirst = rightSibling.children.shift();
+              rightFirst && (rightFirst.parent = removedNode);
+              removedNode.children.push(rightFirst);
 
-          if (leftSibling) {
-            // removedNode与左兄弟结点合并
-          }
-          if (rightSibling) {
-            // removedNode与右兄弟结点合并
-          }
+              return;
+            }
+
+            // 左右兄弟结点均仅剩最少个数的key，需要合并结点
+
+            if (leftSibling) {
+              // removedNode与左兄弟结点合并，将左兄弟合并至removedNode中
+
+              removedNode.keys.unshift(...leftSibling.keys, parentKeys[removedIndex - 1]);
+
+              leftSibling.children.forEach(n => n && (n.parent = removedNode)); // 更新左兄弟结点中的子树的parent指针
+              removedNode.children.unshift(...leftSibling.children);
+
+              parentChildren.splice(removedIndex - 1, 1);
+              parentKeys.splice(removedIndex - 1, 1);
+
+              /* 合并时，父结点失去了一个key，因此需要继续判断父结点key个数是否已小于最小值 */
+              removedNode = removeParent;
+              continue;
+            }
+
+            if (rightSibling) {
+              // removedNode与右兄弟结点合并，将右兄弟合并至removedNode中
+
+              removedNode.keys.push(parentKeys[removedIndex], ...rightSibling.keys);
+
+              rightSibling.children.forEach(n => n && (n.parent = removedNode));
+              removedNode.children.push(...rightSibling.children);
+
+              parentChildren.splice(removedIndex + 1, 1);
+              parentKeys.splice(removedIndex, 1);
+
+              removedNode = removeParent;
+              continue;
+            }
+          } // while ()
         } // function removeKey
       };
 
-      const bt = new BTree(4);
-      bt.search(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55);
+      const bt = new BTree(3);
+      bt.search(5, 10, 15, 20, 25, 30, 35);
       console.log('bt search: \n%s', bt.export());
 
-      bt.remove(5);
+      bt.remove(5, 10, 15, 20, 25, 30, 35);
+      console.log('bt remove: \n%s', bt.export());
 
-      const s = bt.export();
-      console.log('bt: \n%s', s);
+      bt.search(15, 20, 30, 5, 10, 35, 25);
+      console.log('bt 2 search: \n%s', bt.export());
     </script>
   </body>
 </html>
