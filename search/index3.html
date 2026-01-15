@@ -301,6 +301,7 @@
             const leftSibling = parentChildren[removedIndex - 1];
             const rightSibling = parentChildren[removedIndex + 1];
 
+            /* 左兄弟结点的key个数未达到最小值，从左兄弟结点中借取一个元素 */
             if (leftSibling && leftSibling.keys.length > this.minKeyNum) {
               // 从左兄弟结点中选取最大的关键字移动至父结点，父结点的邻近关键字移动至removedNode中
 
@@ -314,6 +315,7 @@
               return;
             }
 
+            /* 右兄弟结点的key个数未达到最小值，从右兄弟结点中借取一个元素 */
             if (rightSibling && rightSibling.keys.length > this.minKeyNum) {
               // 从右兄弟结点中选取最小的关键字移动至父结点，父结点的邻近关键字移动至removedNode中
 
