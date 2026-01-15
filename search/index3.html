@@ -241,7 +241,7 @@
           if (!this.root) return; // 树尚未初始化，无法删除结点，直接返回
 
           let node = this.root;
-          let removedI;
+          let removedI; // 待删key所在的索引，或者下一次查找的子树的前一个索引
           while (node) {
             const { found, i } = this.bSearch(node.keys, key);
             removedI = i;
@@ -262,7 +262,7 @@
         function removeKey(node, index) {
           /* 根据BTree的插入新key的方式，结点的子树数组children要么全部为空，要么全部非空。如果为空则表示该结点为叶子结点 */
           const isChild = !node.children[index];
-          let removedNode;
+          let removedNode; // 被删除key的结点
 
           if (isChild) {
             // 待删key位于叶子结点上
@@ -272,7 +272,7 @@
             node.children.length--; // 子树数组中的值均为空，无需移动元素
           } else {
             /* 待删key位于非叶子结点上，此时找到比待删key小的最大key，然后替换至key的位置上。
-            最大的key位于叶子结点上，然后在叶子结点上删除 */
+               最大的key位于叶子结点上，然后在叶子结点上删除 */
 
             removedNode = node.children[index];
             while (removedNode.children.at(-1)) {
@@ -287,6 +287,8 @@
 
           while (removedNode.keys.length < this.minKeyNum) {
             if (removedNode === this.root) {
+              /* 如果被删key位于根节点，则根节点最小key个数为1,如果删除后个数为0则表示
+               该结点唯一的子树为新的根节点 */
               if (removedNode.keys.length === 0) {
                 this.root = removedNode.children[0];
                 this.root && (this.root.parent = null);
@@ -323,7 +325,7 @@
               parentKeys[removedIndex] = rightSibling.keys.shift();
 
               const rightFirst = rightSibling.children.shift();
-              rightFirst && (rightFirst.parent = removedNode);
+              rightFirst && (rightFirst.parent = removedNode); // 同上
               removedNode.children.push(rightFirst);
 
               return;
@@ -333,6 +335,7 @@
 
             if (leftSibling) {
               // removedNode与左兄弟结点合并，将左兄弟合并至removedNode中
+              /* 合并时，将左兄弟结点的key、父结点中大于左兄弟结点且右侧相邻的key顺次插入removedNode中的前面 */
 
               removedNode.keys.unshift(...leftSibling.keys, parentKeys[removedIndex - 1]);
 
@@ -349,6 +352,7 @@
 
             if (rightSibling) {
               // removedNode与右兄弟结点合并，将右兄弟合并至removedNode中
+              /* 合并时，将父结点中小于右兄弟结点且左侧相邻的key、右兄弟结点的key顺次插入removedNode的后面 */
 
               removedNode.keys.push(parentKeys[removedIndex], ...rightSibling.keys);
 
