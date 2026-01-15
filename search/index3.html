@@ -90,6 +90,7 @@
         return JSON.stringify(output);
       };
 
+      /* 在BTree中查询key，如果key不存在则插入,插入后按需要调整BTree */
       BTree.prototype.search = function (...keys) {
         for (const key of keys) {
           if (!this.root) {
@@ -254,6 +255,7 @@
         return { found: false, i: high };
       }; // end BTree.prototype.bSearch
 
+      /* 在BTree中删除key，如果key存在则删除，删除后按需要调整BTree。如果不存在则不修改BTree并继续查找下一个key */
       BTree.prototype.remove = function (...keys) {
         for (const key of keys) {
           if (!this.root) return; // 树尚未初始化，无法删除结点，直接返回
