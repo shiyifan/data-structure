@@ -23,7 +23,7 @@
         this.keys = [];
 
         /* 子树的根节点，其中，children.length = keys.length + 1，children[i]与children[i + 1]为keys[i]的左右子树
-        children[i]的所有key均小于keys[i]，children[i + 1]的所有key均大于keys[i] */
+           children[i]的所有key均小于keys[i]，children[i + 1]的所有key均大于keys[i] */
         this.children = [];
 
         this.parent = parent; // 父结点
@@ -51,7 +51,7 @@
       });
 
       /* 将BTree导出为JSON格式，该格式可作为参数输入到'https://dbis-btree.uibk.ac.at/'中，显示该树的可视化图像，
-      注意，可视化时，需要确保为合法的BTree结构 */
+         注意，可视化时，需要确保为合法的BTree结构 */
       BTree.prototype.export = function () {
         const output = { maxKeys: this.maxKeyNum, keyType: 'number' };
         const nodeData = {}; // 适合可视化的树结点，类似于BNode，用树状结构保存整颗树的结点
@@ -129,34 +129,20 @@
           let insertedK = key;
           let insNode = node;
           let insIndex = position;
-          let twoSplit = null; // 数组类型，保存分裂后的两个结点，第一个元素为分裂点左侧，第二个元素为分裂点右侧
+          let newNode = null; // 分裂后产生的新结点
 
           while (true) {
             const { keys: insKeys, children: insChildren } = insNode;
 
-            const isKeyAppended = insKeys.length === insIndex; // 是否在所有key之后插入新的key
-            /* 在insNode的insIndex位置插入该关键字
-            这里手动插入并移动元素，未采用'Array.prototype.splice'方法 */
-            insKeys.length++;
-            for (let n = insKeys.length - 1; n >= insIndex + 1; n--) {
-              insKeys[n] = insKeys[n - 1];
-            }
-            insKeys[insIndex] = insertedK;
-            /* 子树数组长度也+1 */
-            insChildren.length++;
+            /* 在insNode的insIndex位置插入该关键字 */
+            insKeys.splice(insIndex, 0, insertedK);
 
-            if (twoSplit) {
-              // 上一层结点已被分裂，位于分裂点的key已插入当前结点中，更新指向两个分裂后子树的指针
-
-              /* 如果不在末尾插入，那么需要调整插入key左侧与右侧的子树。否则，仅需要调整右侧的子树即可 */
-              if (!isKeyAppended) {
-                // 移动子树数组的元素
-                for (let n = insChildren.length - 1; n >= insIndex + 1; n--) {
-                  insChildren[n] = insChildren[n - 1];
-                }
-                insChildren[insIndex] = twoSplit[0]; // 分裂点key的左侧是分裂时保留的原结点
-              }
-              insChildren[insIndex + 1] = twoSplit[1]; // 分裂点key的右侧是分裂时新建的结点
+            if (!newNode) {
+              // 叶子结点仅需要增加长度，无需调整子树指针
+              insChildren.length++;
+            } else {
+              // 下层结点已分裂，且分裂点的key已插入当前结点，还需插入一个指向新结点的子树指针
+              insChildren.splice(insIndex + 1, 0, newNode);
             }
 
             if (insKeys.length <= this.maxKeyNum) {
@@ -165,43 +151,37 @@
             }
 
             /* 超过最大个数需要分裂这个结点
-            分裂为两个结点: 第一个结点拥有BTree所要求的最少key个数，另一个拥有剩余的key。并将位于分裂点的key插入父结点中 */
+               分裂为两个结点: 第一个结点拥有BTree所要求的最少key个数，另一个拥有剩余的key。并将位于分裂点的key插入父结点中
+               可将被分裂的结点作为第一个结点，新建一个结点作为第二个结点 */
 
             const splitI = this.minKeyNum; // 分裂点索引，BTree结点至少拥有"(阶数 / 2) - 1"个key值，但根节点至少拥有一个key值
             insertedK = insKeys[splitI]; // 分裂点key，将被插入父结点
 
-            const newNode = new BNode(insNode.parent);
+            newNode = new BNode(insNode.parent);
             /* 将分裂点右侧[splitI + 1 ... insKeys.length - 1]的key与children复制到新结点中 */
             const spStart = splitI + 1; // 原结点中分裂起始索引
-            for (let n = spStart; n < insKeys.length; n++) {
-              newNode.keys[n - spStart] = insKeys[n];
-            }
-            for (let n = spStart; n < insChildren.length; n++) {
-              newNode.children[n - spStart] = insChildren[n];
-              // 同时需要更新分裂点右侧子树的父结点为新建结点
-              newNode.children[n - spStart] && (newNode.children[n - spStart].parent = newNode);
-            }
+            newNode.keys = insKeys.slice(spStart);
+            newNode.children = insChildren.slice(spStart);
+            newNode.children.forEach(n => n && (n.parent = newNode)); // 同时需要更新分裂点右侧子树的父结点为新建结点
 
             /* 删除分裂点右侧key，包括位于分裂点的key，分裂点左侧[0 ... splitI - 1]的key保留在原结点中 */
             insKeys.length = splitI;
             /* 同时删除分裂点右侧的所有子树，但不包括位于分裂点索引的子树（因为children[i] < key[i] < children[i + 1]） */
             insChildren.length = splitI + 1;
 
-            twoSplit = [insNode, newNode];
-            insNode = insNode.parent; // 下一次循环将key插入父结点中
-
-            if (!insNode) {
-              // 根节点已被分裂，需创建新的根节点
+            if (!insNode.parent) {
+              // 被分裂的结点是根节点，需创建新的根节点
 
               const newRoot = new BNode();
               newRoot.keys.push(insertedK);
-              newRoot.children[0] = twoSplit[0];
-              newRoot.children[1] = twoSplit[1];
-              twoSplit[0].parent = twoSplit[1].parent = newRoot;
+              newRoot.children.push(insNode, newNode);
+              insNode.parent = newNode.parent = newRoot;
               this.root = newRoot;
 
               break;
             }
+            // 被分裂的结点不是根节点，继续向上判断
+            insNode = insNode.parent; // 下一次循环将key插入父结点中
 
             const { i: insertedI } = this.bSearch(insNode.keys, insertedK); // 计算分割点key在父结点中插入的位置
             insIndex = insertedI + 1;
@@ -381,14 +361,14 @@
         } // function removeKey
       };
 
-      const bt = new BTree(3);
-      bt.search(5, 10, 15, 20, 25, 30, 35);
+      const bt = new BTree(4);
+      bt.search(35, 30, 25, 20, 15, 10, 5);
       console.log('bt search: \n%s', bt.export());
 
       bt.remove(5, 10, 15, 20, 25, 30, 35);
       console.log('bt remove: \n%s', bt.export());
 
-      bt.search(15, 20, 30, 5, 10, 35, 25);
+      bt.search(5, 10, 15, 20, 25, 30, 35);
       console.log('bt 2 search: \n%s', bt.export());
     </script>
   </body>
