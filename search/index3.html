@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -13,7 +13,8 @@
     </ul>
 
     <script>
-      console.log('%cvisualize tree: %s', 'color: #7C16F0; font-size: 1.25em', 'https://dbis-btree.uibk.ac.at/');
+      console.log('%cBTree可视化工具: %s', 'color: #7C16F0; font-size: 1.25em', 'https://dbis-btree.uibk.ac.at/');
+      console.log('%c目前没找到可视化B+Tree的工具', 'color: red; font-size: 1.25em');
     </script>
 
     <script>
@@ -378,6 +379,45 @@
 
       bt.search(5, 10, 15, 20, 25, 30, 35);
       console.log('bt 2 search: \n%s', bt.export());
+    </script>
+
+    <script>
+      /* B+Tree */
+
+      /* B+Tree非叶子结点 */
+      function BPNode(parent) {
+        this.keys = [];
+        this.children = [];
+        this.parent = parent;
+      }
+
+      /* B+Tree叶子结点 */
+      function BPLeaf(parent, next) {
+        BPNode.call(this, parent);
+        this.next = next; // 下一个叶子结点
+      }
+      BPLeaf.prototype = Object.create(BPNode.prototype);
+
+      function BPTree(order) {
+        this.root = null;
+        this.seqHead = null; // 序列化访问时的第一个叶子结点
+        this.order = order;
+      }
+
+      Object.defineProperties(BPTree.prototype, {
+        minKeyNum: {
+          get() {
+            return Math.ceil(this.order / 2);
+          },
+        },
+        maxKeyNum: {
+          get() {
+            return this.order;
+          },
+        },
+      });
+
+      BPTree.prototype.export = BTree.prototype.export;
     </script>
   </body>
 </html>
