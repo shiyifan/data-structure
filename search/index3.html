@@ -9,12 +9,13 @@
     <h1>For Data Structure</h1>
 
     <ul>
-      <li>B-Tree</li>
+      <li>B Tree</li>
+      <li>B<sup>+</sup> Tree</li>
     </ul>
 
     <script>
       console.log('%cBTree可视化工具: %s', 'color: #7C16F0; font-size: 1.25em', 'https://dbis-btree.uibk.ac.at/');
-      console.log('%c目前没找到可视化B+Tree的工具', 'color: red; font-size: 1.25em');
+      console.log('%c目前没找到可视化B+Tree的工具', 'color: #F5275C; font-size: 1.25em');
     </script>
 
     <script>
@@ -386,38 +387,176 @@
 
       /* B+Tree非叶子结点 */
       function BPNode(parent) {
-        this.keys = [];
-        this.children = [];
+        this.keys = []; // 所有的关键字为该结点每个子树根结点中最大的关键字
+        this.children = []; // 非叶子结点的关键字个数与子树个数相同。这里'children[i] <= key[i]'
         this.parent = parent;
       }
 
       /* B+Tree叶子结点 */
       function BPLeaf(parent, next) {
         BPNode.call(this, parent);
-        this.next = next; // 下一个叶子结点
+        this.next = next; // 下一个叶子结点，用于从头开始序列化访问
       }
       BPLeaf.prototype = Object.create(BPNode.prototype);
 
       function BPTree(order) {
         this.root = null;
-        this.seqHead = null; // 序列化访问时的第一个叶子结点
+        this.seqHead = null; // 第一个叶子结点，即最左侧的叶子结点。用于序列化访问
         this.order = order;
       }
 
       Object.defineProperties(BPTree.prototype, {
+        /* 结点最少的关键字个数 */
         minKeyNum: {
           get() {
             return Math.ceil(this.order / 2);
           },
         },
+        /* 结点最多的关键字个数 */
         maxKeyNum: {
           get() {
             return this.order;
           },
         },
+        /* 全部的关键字，以序列化访问方式返回全部的关键字 */
+        allKeys: {
+          get() {
+            if (!this.seqHead) return [];
+
+            const keys = [];
+            let p = this.seqHead;
+            while (p) {
+              keys.push(...p.keys);
+              p = p.next;
+            }
+
+            return keys;
+          },
+        },
       });
 
       BPTree.prototype.export = BTree.prototype.export;
+      BPTree.prototype.bSearch = BTree.prototype.bSearch;
+
+      /* 在树中查找key值，若不存在则插入 */
+      BPTree.prototype.search = function (...keys) {
+        for (const key of keys) {
+          if (this.root == null) {
+            const root = new BPLeaf();
+            root.keys.push(key);
+            root.children.length++;
+            this.root = root;
+            this.seqHead = root;
+            continue;
+          }
+
+          // 从根结点开始查找
+          let node = this.root;
+          let found, i;
+          /* 在插入新key时，第一个需要更新最大key的非叶子结点。并且后续查找路径中所有的非叶子结点都需要更新最大的key */
+          let updateRoot;
+          while (node) {
+            ({ found, i } = this.bSearch(node.keys, key));
+
+            /* 无论是否找到key,都需要查找到叶子结点为止
+            B+Tree中，叶子结点中的查找结果为最终的结果 */
+            if (node instanceof BPLeaf) break;
+
+            if (found) {
+              node = node.children[i];
+              continue;
+            }
+
+            // 当前非叶子结点node中没找到key
+
+            if (i === node.keys.length - 1) {
+              /* key比所有的关键字大。
+              node所有子树或者小于node.keys的最大关键字,或者等于最大关键字。子树中不可能再找到等于key的关键字。
+              此时仍然需要在最大的子树中继续查找，找到将保存该key的叶子结点，然后添加到叶子结点中。
+              注意，这时候需要更新一些父结点的最大关键字 */
+
+              if (!updateRoot) {
+                updateRoot = node;
+              }
+              node = node.children.at(-1);
+              continue;
+            }
+
+            // i === -1(key小于所有的关键字) 或者key在当前结点关键字的范围之中
+            node = node.children[i + 1];
+          }
+
+          // 已查找至叶子结点
+
+          if (found) {
+            console.log('%d found!, index: %d', key, i);
+            continue;
+          }
+
+          /* 叶子结点中没找到key, 插入这个key */
+          node.keys.splice(i + 1, 0, key);
+          node.children.length++;
+
+          /* 更新查找路径上非叶子结点的最大key */
+          if (updateRoot) {
+            let p = node.parent;
+            while (p && p !== updateRoot.parent) {
+              p.keys[p.keys.length - 1] = key;
+              p = p.parent;
+            }
+          }
+
+          // 结点插入新key之后的分裂以及更新操作
+
+          while (true) {
+            if (node.keys.length <= this.maxKeyNum) break;
+
+            // 关键字插入结点之后，叶子结点的关键字个数超出最大值
+
+            let newNode;
+            if (node instanceof BPLeaf) {
+              newNode = new BPLeaf(node.parent);
+              /* 维护序列化访问的链表指针 
+              分裂叶子结点时，新结点始终作为被分裂结点的右侧结点，因此即使分裂的是"seqHead"结点，也无需
+              更新"seqHead"指针 */
+              newNode.next = node.next;
+              node.next = newNode;
+            } else {
+              newNode = new BPNode(node.parent);
+            }
+
+            // 当前结点保留最少个数的key,剩余的key全部移动至新结点中
+            const deletedKeys = node.keys.splice(this.minKeyNum);
+            newNode.keys.push(...deletedKeys);
+            const deletedChildren = node.children.splice(this.minKeyNum);
+            newNode.children.push(...deletedChildren);
+            deletedChildren.forEach(c => (c.parent = newNode)); // 更新原来子树的父结点为新的结点
+
+            // 在父结点中更新并插入key
+
+            if (node.parent == null) {
+              // 当前结点是跟结点，需要新建跟结点并更新'this.root'指针
+              const newRoot = new BPNode();
+              node.parent = newNode.parent = newRoot;
+              newRoot.children.push(node);
+              this.root = newRoot;
+            }
+            const parent = node.parent;
+            const nodeIndex = parent.children.indexOf(node);
+            /* 在父结点中更新和插入原结点分裂后新的最大值与新结点的最大值 */
+            parent.keys.splice(nodeIndex, 1, node.keys.at(-1), newNode.keys.at(-1));
+            parent.children.splice(nodeIndex + 1, 0, newNode);
+
+            node = parent; // 继续判断父结点的关键字是否超出最大值
+          }
+        }
+      };
+
+      console.log('b+ tree');
+
+      const bpt0 = new BPTree(3);
+      bpt0.search(1, 2, 3, 4, 5, 6, 7, 8, 0, -1, -2, -3);
+      console.log(bpt0, bpt0.allKeys);
     </script>
   </body>
 </html>
