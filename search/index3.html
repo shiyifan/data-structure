@@ -393,15 +393,17 @@
       }
 
       /* B+Tree叶子结点 */
-      function BPLeaf(parent, next) {
+      function BPLeaf(parent, next, prev) {
         BPNode.call(this, parent);
         this.next = next; // 下一个叶子结点，用于从头开始序列化访问
+        this.prev = prev;
       }
       BPLeaf.prototype = Object.create(BPNode.prototype);
 
       function BPTree(order) {
         this.root = null;
         this.seqHead = null; // 第一个叶子结点，即最左侧的叶子结点。用于序列化访问
+        this.seqTail = null; // 最后一个叶子结点，即最右侧的叶子结点。用于序列化访问
         this.order = order;
       }
 
@@ -433,6 +435,20 @@
             return keys;
           },
         },
+        allKeysReversed: {
+          get() {
+            if (!this.seqTail) return [];
+
+            const reversed = [];
+            let p = this.seqTail;
+            while (p) {
+              reversed.push(...p.keys.toReversed());
+              p = p.prev;
+            }
+
+            return reversed;
+          },
+        },
       });
 
       BPTree.prototype.export = BTree.prototype.export;
@@ -440,6 +456,7 @@
 
       /* 在树中查找key值，若不存在则插入 */
       BPTree.prototype.search = function (...keys) {
+        let foundKeys = [];
         for (const key of keys) {
           if (this.root == null) {
             const root = new BPLeaf();
@@ -447,6 +464,7 @@
             root.children.length++;
             this.root = root;
             this.seqHead = root;
+            this.seqTail = root;
             continue;
           }
 
@@ -489,7 +507,7 @@
           // 已查找至叶子结点
 
           if (found) {
-            console.log('%d found!, index: %d', key, i);
+            foundKeys.push(key);
             continue;
           }
 
@@ -516,10 +534,19 @@
             let newNode;
             if (node instanceof BPLeaf) {
               newNode = new BPLeaf(node.parent);
-              /* 维护序列化访问的链表指针 
+              /* 维护序列化访问的链表指针
               分裂叶子结点时，新结点始终作为被分裂结点的右侧结点，因此即使分裂的是"seqHead"结点，也无需
               更新"seqHead"指针 */
               newNode.next = node.next;
+              newNode.prev = node;
+
+              if (node.next == null) {
+                // 如果当前结点是序列化访问的最后一个结点，需要更新seqTail指针
+
+                this.seqTail = newNode;
+              } else {
+                node.next.prev = newNode;
+              }
               node.next = newNode;
             } else {
               newNode = new BPNode(node.parent);
@@ -550,13 +577,166 @@
             node = parent; // 继续判断父结点的关键字是否超出最大值
           }
         }
+
+        if (foundKeys.length !== 0) {
+          console.log('keys found! %s', foundKeys.join(', '));
+        }
+      };
+
+      /* 删除树中某一个关键字 */
+      BPTree.prototype.remove = function (...keys) {
+        for (const key of keys) {
+          if (this.root == null) {
+            return;
+          }
+
+          let node = this.root;
+          let found, i;
+          while (node) {
+            ({ found, i } = this.bSearch(node.keys, key));
+
+            if (node instanceof BPLeaf) break;
+
+            if (found) {
+              /* 在非叶子结点中找到key，继续向下查找直到叶子结点 */
+              node = node.children[i];
+              continue;
+            }
+
+            /* 若key大于当前结点所有的关键字,由于非叶子结点的关键字为各子树关键字的最大值，所以
+            key不会存在于子树中，结束当前查找，继续查找下一个key */
+            if (i === node.keys.length - 1) break;
+
+            node = node.children[i + 1];
+          }
+
+          /* 叶子结点中不存在key,或者key大于某一非叶子结点的所有关键字，那么B+Tree中没有该key,继续查找下一个key */
+          if (!found) continue;
+
+          // 在叶子结点中找到key
+
+          node.keys.splice(i, 1);
+          node.children.length--;
+
+          if (node.parent == null) {
+            if (node.keys.length === 0) {
+              this.root = this.seqHead = this.seqTail = null;
+            }
+            continue;
+          }
+
+          let currentLeaf = true; // 当前是否位于叶子结点层次
+          while (true) {
+            if (node.keys.length >= this.minKeyNum) break;
+
+            // 叶子结点的关键字个数少于最小值，需要从左右兄弟借一个关键字或者合并关键字
+
+            const parent = node.parent;
+            const nodeIndex = parent.children.indexOf(node);
+
+            const leftSib = parent.children[nodeIndex - 1];
+            const rightSib = parent.children[nodeIndex + 1];
+
+            if (leftSib && leftSib.keys.length > this.minKeyNum) {
+              /* 将左兄弟结点最大key与子树插入当前结点的第一个元素之前 */
+              node.keys.unshift(leftSib.keys.pop());
+              node.children.unshift(leftSib.children.pop());
+
+              // 由于左兄弟结点失去了最大key,因此需要更新父结点中左兄弟的索引
+              parent.keys[nodeIndex - 1] = leftSib.keys.at(-1);
+              break;
+            }
+
+            if (rightSib && rightSib.keys.length > this.minKeyNum) {
+              node.keys.push(rightSib.keys.shift());
+              node.children.push(rightSib.children.shift());
+
+              // 由于当前结点新增了最大的key,因此需要更新父结点中当前结点的索引
+              parent.keys[nodeIndex] = node.keys.at(-1);
+              break;
+            }
+
+            /* 左右兄弟的key个数均已达到最小值，此时应与其中之一合并 */
+
+            /* 注意，合并时与B-Tree不同，不需要将父结点中的、两个子结点间的key移动至合并后的子结点中。
+            因为两个待合并的子结点包含所有的key */
+
+            /* 合并时，将较小的结点合并至较大的结点中，这样无需修改父结点中的索引 */
+
+            let merged;
+            if (leftSib) {
+              // 将左兄弟结点合并至当前结点
+
+              node.keys.unshift(...leftSib.keys);
+              node.children.unshift(...leftSib.children);
+              leftSib.children.forEach(c => c && (c.parent = node)); // 更新父结点指针
+              parent.keys.splice(nodeIndex - 1, 1);
+              parent.children.splice(nodeIndex - 1, 1);
+
+              merged = node;
+
+              if (currentLeaf) {
+                // 当前结点是叶子结点，需要更新序列化遍历的指针
+
+                if (leftSib.prev == null) {
+                  // 左兄弟结点是序列化遍历的头结点
+
+                  this.seqHead = node;
+                } else {
+                  leftSib.prev.next = node;
+                }
+
+                node.prev = leftSib.prev;
+              }
+            } else if (rightSib) {
+              // 将当前结点合并至右兄弟结点
+
+              rightSib.keys.unshift(...node.keys);
+              rightSib.children.unshift(...node.children);
+              node.children.forEach(c => c && (c.parent = rightSib));
+              parent.keys.splice(nodeIndex, 1);
+              parent.children.splice(nodeIndex, 1);
+
+              merged = rightSib;
+
+              if (currentLeaf) {
+                if (node.prev == null) {
+                  this.seqHead = rightSib;
+                } else {
+                  node.prev.next = rightSib;
+                }
+                rightSib.prev = node.prev;
+              }
+            }
+
+            if (parent.parent == null) {
+              // 已合并的两个结点为根结点的直接子结点，无需继续判断key的个数
+
+              if (parent.keys.length < 2) {
+                this.root = merged;
+                merged.parent = null;
+              }
+              break;
+            }
+
+            // 由于父结点中失去了一个key,所以继续判断父结点key个数是否达到最小值
+            node = parent;
+            currentLeaf = false;
+          } // while
+        }
       };
 
       console.log('b+ tree');
 
       const bpt0 = new BPTree(3);
-      bpt0.search(1, 2, 3, 4, 5, 6, 7, 8, 0, -1, -2, -3);
-      console.log(bpt0, bpt0.allKeys);
+      bpt0.search(5, 6, 7, 8, 1, 2, 3, 4, 9);
+      console.log(bpt0, bpt0.allKeys, bpt0.allKeysReversed);
+
+      bpt0.remove(1, 2, 3, 4, 5, 6);
+      console.log(bpt0, bpt0.allKeys, bpt0.allKeysReversed);
+
+      bpt0.search(10, 15, 20, 5, 6, 7, 25);
+      console.log(bpt0, bpt0.allKeys, bpt0.allKeysReversed);
     </script>
   </body>
 </html>
