@@ -398,7 +398,7 @@
         this.next = next; // 下一个叶子结点，用于从头开始序列化访问
         this.prev = prev;
       }
-      BPLeaf.prototype = Object.create(BPNode.prototype);
+      Object.setPrototypeOf(BPLeaf.prototype, BPNode.prototype);
 
       function BPTree(order) {
         this.root = null;
